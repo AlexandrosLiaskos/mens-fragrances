@@ -82,7 +82,8 @@ export default function Reel({ data }: { data: FilmData }) {
       if (Math.abs(d) < 14) return;
       lock.current = true;
       go(d > 0 ? 1 : -1);
-      window.setTimeout(() => (lock.current = false), 760);
+      // hold until the 0.9s slide settles, so a fast scroll can't cut a transition short
+      window.setTimeout(() => (lock.current = false), 960);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
