@@ -39,17 +39,25 @@ const Theme = z.object({
   metal: Metal.default("gold"),
 });
 
+/* the leaf of the hierarchy: a concrete SKU = one volume of one concentration */
 const Size = z.object({
   ml: z.number().positive(),
   price: z.number().positive().optional(),
   priceRange: z.tuple([z.number(), z.number()]).optional(),
+  sku: z.string().optional(),
+  isDefault: z.boolean().default(false),
+  /** imagery specific to THIS exact SKU; falls back to the variant, then the fragrance */
+  images: z.array(Image).optional(),
 });
 
-/** the TITLE is the entry; concentration variants live inside it */
+/* the TITLE is the entry; concentration variants live inside it, volumes inside those.
+   Fragrance -> Variant (concentration) -> Size (volume = SKU) */
 const Variant = z.object({
   concentration: Concentration,
   sizes: z.array(Size).min(1),
   isDefault: z.boolean().default(false),
+  /** imagery specific to THIS concentration (e.g. a different colourway); falls back to the fragrance */
+  images: z.array(Image).optional(),
 });
 
 const Accord = z.object({
@@ -88,6 +96,8 @@ export const FragranceSchema = z.object({
   images: z.array(Image).min(1),
 
   inspiredBy: z.array(z.string()).default([]),
+  /** free-form groupings for curated collections (e.g. "Amber Orientals", "Evening") */
+  tags: z.array(z.string()).default([]),
 
   theme: Theme,
 });
