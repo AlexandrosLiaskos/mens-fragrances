@@ -6,17 +6,19 @@ import Image from "next/image";
 import styles from "./catalogue.module.css";
 
 export type Item = {
-  slug: string;
+  id: string;
   title: string;
   brand: string;
   year: number;
   subFamily: string;
+  concentration: string; // display label, e.g. "Eau de Parfum"
+  ml: number;
+  priceMin: number;
+  priceMax: number;
+  priceLabel: string;
   notes: string[];
   seasons: string[];
   occasions: string[];
-  concentrations: string[];
-  priceMin: number;
-  priceMax: number;
   image: { src: string; alt: string };
   href: string;
 };
@@ -28,7 +30,11 @@ export default function Catalogue({ items }: { items: Item[] }) {
   const notes = useMemo(() => uniq(items.flatMap((i) => i.notes)), [items]);
   const seasons = useMemo(() => uniq(items.flatMap((i) => i.seasons)), [items]);
   const occasions = useMemo(() => uniq(items.flatMap((i) => i.occasions)), [items]);
-  const concentrations = useMemo(() => uniq(items.flatMap((i) => i.concentrations)), [items]);
+  const concentrations = useMemo(() => uniq(items.map((i) => i.concentration)), [items]);
+  const volumes = useMemo(
+    () => Array.from(new Set(items.map((i) => i.ml))).sort((a, b) => a - b).map((n) => `${n} ml`),
+    [items]
+  );
   const bounds = useMemo<[number, number]>(() => {
     const lo = Math.min(...items.map((i) => i.priceMin));
     const hi = Math.max(...items.map((i) => i.priceMax));
@@ -41,6 +47,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
   const [season, setSeason] = useState<Set<string>>(new Set());
   const [occasion, setOccasion] = useState<Set<string>>(new Set());
   const [conc, setConc] = useState<string | null>(null);
+  const [vol, setVol] = useState<Set<string>>(new Set());
   const [pMin, setPMin] = useState(bounds[0]);
   const [pMax, setPMax] = useState(bounds[1]);
   const [open, setOpen] = useState(false); // mobile filter drawer
@@ -53,7 +60,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
 
   const priceActive = pMin > bounds[0] || pMax < bounds[1];
   const activeCount =
-    (q ? 1 : 0) + fam.size + note.size + season.size + occasion.size + (conc ? 1 : 0) + (priceActive ? 1 : 0);
+    (q ? 1 : 0) + fam.size + note.size + season.size + occasion.size + (conc ? 1 : 0) + vol.size + (priceActive ? 1 : 0);
 
   const clearAll = () => {
     setQ("");
@@ -62,6 +69,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
     setSeason(new Set());
     setOccasion(new Set());
     setConc(null);
+    setVol(new Set());
     setPMin(bounds[0]);
     setPMax(bounds[1]);
   };
@@ -77,11 +85,12 @@ export default function Catalogue({ items }: { items: Item[] }) {
         if (note.size && !it.notes.some((n) => note.has(n))) return false;
         if (season.size && !it.seasons.some((s) => season.has(s))) return false;
         if (occasion.size && !it.occasions.some((o) => occasion.has(o))) return false;
-        if (conc && !it.concentrations.includes(conc)) return false;
+        if (conc && it.concentration !== conc) return false;
+        if (vol.size && !vol.has(`${it.ml} ml`)) return false;
         if (it.priceMax < pMin || it.priceMin > pMax) return false;
         return true;
       }),
-    [items, q, fam, note, season, occasion, conc, pMin, pMax]
+    [items, q, fam, note, season, occasion, conc, vol, pMin, pMax]
   );
 
   return (
@@ -113,11 +122,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
       </header>
 
       <div className={styles.body}>
-        <aside
-          className={`${styles.filters} ${open ? styles.filtersOpen : ""}`}
-          aria-label="Filters"
-          aria-hidden={undefined}
-        >
+        <aside className={`${styles.filters} ${open ? styles.filtersOpen : ""}`} aria-label="Filters">
           <input
             className={styles.search}
             type="search"
@@ -133,14 +138,6 @@ export default function Catalogue({ items }: { items: Item[] }) {
 
           <Group title="Notes" count={note.size} scroll>
             <Checklist options={notes} selected={note} onToggle={toggler(note, setNote)} />
-          </Group>
-
-          <Group title="Season" count={season.size}>
-            <Checklist options={seasons} selected={season} onToggle={toggler(season, setSeason)} />
-          </Group>
-
-          <Group title="Occasion" count={occasion.size}>
-            <Checklist options={occasions} selected={occasion} onToggle={toggler(occasion, setOccasion)} />
           </Group>
 
           <Group title="Concentration" count={conc ? 1 : 0}>
@@ -161,6 +158,18 @@ export default function Catalogue({ items }: { items: Item[] }) {
                 );
               })}
             </ul>
+          </Group>
+
+          <Group title="Volume" count={vol.size}>
+            <Checklist options={volumes} selected={vol} onToggle={toggler(vol, setVol)} />
+          </Group>
+
+          <Group title="Season" count={season.size}>
+            <Checklist options={seasons} selected={season} onToggle={toggler(season, setSeason)} />
+          </Group>
+
+          <Group title="Occasion" count={occasion.size}>
+            <Checklist options={occasions} selected={occasion} onToggle={toggler(occasion, setOccasion)} />
           </Group>
 
           <Group title="Price" count={priceActive ? 1 : 0}>
@@ -196,7 +205,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
             </button>
           )}
           <button className={styles.done} onClick={() => setOpen(false)}>
-            Show {filtered.length} {filtered.length === 1 ? "Fragrance" : "Fragrances"} &rarr;
+            Show {filtered.length} {filtered.length === 1 ? "Item" : "Items"} &rarr;
           </button>
         </aside>
 
@@ -207,15 +216,17 @@ export default function Catalogue({ items }: { items: Item[] }) {
           ) : (
             <div className={styles.grid}>
               {filtered.map((it) => (
-                <Link key={it.slug} href={it.href} className={styles.card}>
+                <Link key={it.id} href={it.href} className={styles.card}>
                   <div className={styles.cardImg}>
                     <Image src={it.image.src} alt={it.image.alt} fill sizes="(max-width: 860px) 45vw, 200px" />
                   </div>
-                  <span className={styles.cardEyebrow}>
-                    {it.brand} · {it.year}
-                  </span>
+                  <span className={styles.cardEyebrow}>{it.brand}</span>
                   <span className={styles.cardName}>{it.title}</span>
+                  <span className={styles.cardVariant}>
+                    {it.concentration} · {it.ml} ml
+                  </span>
                   <span className={styles.cardFamily}>{it.subFamily}</span>
+                  <span className={styles.cardPrice}>{it.priceLabel}</span>
                 </Link>
               ))}
             </div>
@@ -242,11 +253,7 @@ function Group({
   const [open, setOpen] = useState(true);
   return (
     <div className={styles.group}>
-      <button
-        className={styles.groupHead}
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
+      <button className={styles.groupHead} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className={styles.groupTitle}>
           {title}
           {count > 0 && <span className={styles.groupCount}>{count}</span>}
@@ -268,12 +275,10 @@ function Checklist({
   options,
   selected,
   onToggle,
-  square,
 }: {
   options: string[];
   selected: Set<string>;
   onToggle: (v: string) => void;
-  square?: boolean;
 }) {
   return (
     <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -286,7 +291,7 @@ function Checklist({
               onClick={() => onToggle(o)}
               aria-pressed={on}
             >
-              <span className={`${styles.optMark} ${square ? styles.optMarkSquare : ""}`} aria-hidden="true" />
+              <span className={styles.optMark} aria-hidden="true" />
               <span>{o}</span>
             </button>
           </li>

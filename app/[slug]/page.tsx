@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFragrances, getFragranceBySlug } from "@/lib/content";
+import { CONCENTRATION_LABEL, defaultSku, resolveImage } from "@/lib/catalog";
 import Reel, { type FilmData } from "@/components/film/Reel";
-
-const CONCENTRATION: Record<string, string> = {
-  EDP: "Eau de Parfum",
-  EDT: "Eau de Toilette",
-  EDC: "Eau de Cologne",
-  Parfum: "Parfum",
-  Extrait: "Extrait de Parfum",
-  Elixir: "Elixir",
-  Oil: "Perfume Oil",
-  Cologne: "Cologne",
-};
 
 export const dynamicParams = false;
 
@@ -50,19 +40,21 @@ export default async function FragrancePage({
   const f = getFragranceBySlug(slug);
   if (!f) notFound();
 
-  const img = (role: string) => f.images.find((i) => i.role === role);
-  const item = img("item");
-  const atmos = img("unboxing") ?? img("in-hand") ?? img("lifestyle");
-  const day = img("daylight");
-  if (!item || !day) notFound();
+  // resolve the default SKU (concentration + volume) and its imagery via the cascade
+  const { variant, size } = defaultSku(f);
+  const bottle = resolveImage(f, variant, size, "item") ?? f.images[0];
+  const atmos =
+    resolveImage(f, variant, size, "unboxing") ??
+    resolveImage(f, variant, size, "in-hand") ??
+    resolveImage(f, variant, size, "lifestyle");
+  const day = resolveImage(f, variant, size, "daylight");
+  if (!bottle || !day) notFound();
 
-  const variant = f.variants.find((v) => v.isDefault) ?? f.variants[0];
-  const size = variant.sizes[0];
-  const conc = CONCENTRATION[variant.concentration] ?? variant.concentration;
+  const conc = CONCENTRATION_LABEL[variant.concentration] ?? variant.concentration;
   const family = `${f.family.replace("/", " / ")} Woody`;
   const price = size.priceRange
     ? `$${size.priceRange[0]}–${size.priceRange[1]}`
-    : size.price
+    : size.price != null
       ? `$${size.price}`
       : "—";
 
@@ -88,7 +80,7 @@ export default async function FragrancePage({
       ["Price", `approx. ${price}`],
     ],
     items: {
-      bottle: { src: item.src, alt: item.alt },
+      bottle: { src: bottle.src, alt: bottle.alt },
       atmos: atmos ? { src: atmos.src, alt: atmos.alt, pos: atmos.posDesktop ?? "50% 45%" } : null,
       day: { src: day.src, alt: day.alt, pos: day.posDesktop ?? "50% 42%" },
     },
