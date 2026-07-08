@@ -95,18 +95,20 @@ export default function Catalogue({ items }: { items: Item[] }) {
           {items.length === 1 ? "Fragrance" : "Fragrances"}
         </span>
         <button
-          className={styles.toggle}
-          onClick={() => setOpen(true)}
-          aria-label="Open filters"
+          className={`${styles.toggle} ${open ? styles.toggleOpen : ""}`}
+          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? "Close filters" : "Open filters"}
           aria-expanded={open}
         >
+          <span className={styles.toggleLabel}>
+            Filters
+            {activeCount > 0 && <span className={styles.toggleCount}>{activeCount}</span>}
+          </span>
           <span className={styles.bars} aria-hidden="true">
             <span />
             <span />
             <span />
           </span>
-          Filters
-          {activeCount > 0 && <span className={styles.toggleCount}>{activeCount}</span>}
         </button>
       </header>
 
@@ -116,13 +118,6 @@ export default function Catalogue({ items }: { items: Item[] }) {
           aria-label="Filters"
           aria-hidden={undefined}
         >
-          <button
-            className={styles.close}
-            onClick={() => setOpen(false)}
-            aria-label="Close filters"
-          >
-            &times;
-          </button>
           <input
             className={styles.search}
             type="search"

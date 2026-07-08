@@ -9,7 +9,7 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: #050609;
+  background: #030304; /* = the bottle's own black, matched to the home so it melds */
   z-index: 1;
   font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--ink-1);
@@ -20,11 +20,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(58% 54% at 26% 32%, rgba(150, 168, 200, 0.06), transparent 64%),
-    radial-gradient(60% 60% at 84% 88%, rgba(24, 42, 70, 0.2), transparent 70%),
-    radial-gradient(120% 100% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.62) 100%),
-    linear-gradient(180deg, #0a0c11 0%, #06070a 100%);
+  background: radial-gradient(125% 105% at 50% 48%, transparent 56%, rgba(0, 0, 0, 0.55) 100%);
 }
 
 .track {
@@ -122,13 +118,8 @@
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
-.pool {
-  position: absolute;
-  inset: -18% -70%;
-  z-index: -1;
-  background: radial-gradient(closest-side, rgba(150, 168, 200, 0.1), transparent 70%);
-  filter: blur(34px);
-}
+/* no glow behind the bottle — it sits on flat black and melds, as on the home */
+.pool { display: none; }
 
 /* ============================================================
    CHAPTER · FULL FRAME (atmos + light)

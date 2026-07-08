@@ -35,7 +35,7 @@ export default function Page() {
       priceMin,
       priceMax,
       image: { src: item.src, alt: item.alt },
-      href: f.slug === "his-confession" ? "/film" : `/fragrance/${f.slug}`,
+      href: `/${f.slug}`,
     };
   });
 
