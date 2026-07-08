@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFragranceBySlug } from "@/lib/content";
+import { getFragrances, getFragranceBySlug } from "@/lib/content";
 import Reel, { type FilmData } from "@/components/film/Reel";
-
-export const metadata: Metadata = {
-  title: "His Confession — In Camera",
-  description:
-    "Lattafa His Confession — a dark, horizontal, film-like fragrance experience.",
-};
 
 const CONCENTRATION: Record<string, string> = {
   EDP: "Eau de Parfum",
@@ -20,8 +14,40 @@ const CONCENTRATION: Record<string, string> = {
   Cologne: "Cologne",
 };
 
-export default function FilmPage() {
-  const f = getFragranceBySlug("his-confession");
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return getFragrances().map((f) => ({ slug: f.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const f = getFragranceBySlug(slug);
+  if (!f) return {};
+  const item = f.images.find((i) => i.role === "item") ?? f.images[0];
+  const desc = f.epigraph ?? f.descriptor;
+  return {
+    title: { absolute: `${f.title} — ${f.brand}` },
+    description: desc,
+    openGraph: {
+      title: `${f.title} — ${f.brand}`,
+      description: desc,
+      images: item ? [{ url: item.src, alt: item.alt }] : [],
+    },
+  };
+}
+
+export default async function FragrancePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const f = getFragranceBySlug(slug);
   if (!f) notFound();
 
   const img = (role: string) => f.images.find((i) => i.role === role);

@@ -8,7 +8,7 @@ import {
   type CSSProperties,
 } from "react";
 import Image from "next/image";
-import styles from "@/app/film/film.module.css";
+import styles from "./film.module.css";
 
 type Img = { src: string; alt: string; pos?: string };
 
