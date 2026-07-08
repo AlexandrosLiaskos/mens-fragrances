@@ -263,9 +263,6 @@ export default function Reel({ data }: { data: FilmData }) {
                     In the spirit of {data.inspiredBy}
                   </p>
                 )}
-                <a href="#" className={`${styles.cta} ${styles.rv}`}>
-                  Acquire — {data.specs[0]?.[1]}, {data.specs[1]?.[1]}
-                </a>
               </div>
             )}
           </section>
