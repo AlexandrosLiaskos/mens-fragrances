@@ -14,6 +14,8 @@ export const Occasion = z.enum([
 ]);
 export const Metal = z.enum(["gold", "silver"]);
 export const Gender = z.enum(["Masculine", "Feminine", "Unisex"]);
+/* relative price band, cheapest -> dearest; rendered as $ … $$$$ */
+export const PriceTier = z.enum(["Budget", "Mid", "Premium", "Luxury"]);
 export const ImageRole = z.enum([
   "item", "lifestyle", "hero", "bust", "unboxing", "packaging", "in-hand", "editorial", "daylight", "thumb",
 ]);
@@ -42,8 +44,6 @@ const Theme = z.object({
 /* the leaf of the hierarchy: a concrete SKU = one volume of one concentration */
 const Size = z.object({
   ml: z.number().positive(),
-  price: z.number().positive().optional(),
-  priceRange: z.tuple([z.number(), z.number()]).optional(),
   sku: z.string().optional(),
   isDefault: z.boolean().default(false),
   /** imagery specific to THIS exact SKU; falls back to the variant, then the fragrance */
@@ -72,6 +72,8 @@ export const FragranceSchema = z.object({
   releaseYear: z.number().int(),
   origin: z.string().optional(),
   gender: Gender.default("Masculine"),
+  /** relative price band ($=Budget … $$$$=Luxury) — a positioning cue, not a sourced figure */
+  tier: PriceTier,
 
   family: OlfactoryFamily,
   subFamily: z.string().optional(),
