@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFragrances, getFragranceBySlug } from "@/lib/content";
-import { CONCENTRATION_LABEL, defaultSku, resolveImage } from "@/lib/catalog";
+import { CONCENTRATION_LABEL, TIER_LABEL, tierSymbol, defaultSku, resolveImage } from "@/lib/catalog";
 import Reel, { type FilmData } from "@/components/film/Reel";
 
 export const dynamicParams = false;
@@ -52,11 +52,7 @@ export default async function FragrancePage({
 
   const conc = CONCENTRATION_LABEL[variant.concentration] ?? variant.concentration;
   const family = `${f.family.replace("/", " / ")} Woody`;
-  const price = size.priceRange
-    ? `$${size.priceRange[0]}–${size.priceRange[1]}`
-    : size.price != null
-      ? `$${size.price}`
-      : "—";
+  const tier = `${tierSymbol(f.tier)} · ${TIER_LABEL[f.tier] ?? f.tier}`;
 
   const data: FilmData = {
     brand: f.brand,
@@ -77,7 +73,7 @@ export default async function FragrancePage({
       ["Origin", `${f.origin}, ${f.releaseYear}`],
       ["Family", family],
       ["Wear", "Fall / Winter · Evening"],
-      ["Price", `approx. ${price}`],
+      ["Price", tier],
     ],
     items: {
       bottle: { src: bottle.src, alt: bottle.alt },

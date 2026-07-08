@@ -13,9 +13,10 @@ export type Item = {
   subFamily: string;
   concentration: string; // display label, e.g. "Eau de Parfum"
   ml: number;
-  priceMin: number;
-  priceMax: number;
-  priceLabel: string;
+  tier: string;
+  tierLabel: string;
+  tierSymbol: string;
+  tierRank: number;
   notes: string[];
   seasons: string[];
   occasions: string[];
@@ -35,10 +36,12 @@ export default function Catalogue({ items }: { items: Item[] }) {
     () => Array.from(new Set(items.map((i) => i.ml))).sort((a, b) => a - b).map((n) => `${n} ml`),
     [items]
   );
-  const bounds = useMemo<[number, number]>(() => {
-    const lo = Math.min(...items.map((i) => i.priceMin));
-    const hi = Math.max(...items.map((i) => i.priceMax));
-    return [Math.floor(lo), Math.ceil(hi)];
+  const tiers = useMemo(() => {
+    const seen = new Map<string, { tier: string; label: string; symbol: string; rank: number }>();
+    for (const i of items) {
+      if (!seen.has(i.tier)) seen.set(i.tier, { tier: i.tier, label: i.tierLabel, symbol: i.tierSymbol, rank: i.tierRank });
+    }
+    return Array.from(seen.values()).sort((a, b) => a.rank - b.rank);
   }, [items]);
 
   const [q, setQ] = useState("");
@@ -48,8 +51,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
   const [occasion, setOccasion] = useState<Set<string>>(new Set());
   const [conc, setConc] = useState<string | null>(null);
   const [vol, setVol] = useState<Set<string>>(new Set());
-  const [pMin, setPMin] = useState(bounds[0]);
-  const [pMax, setPMax] = useState(bounds[1]);
+  const [tierSel, setTierSel] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false); // mobile filter drawer
 
   const toggler = (s: Set<string>, set: (v: Set<string>) => void) => (v: string) => {
@@ -58,9 +60,8 @@ export default function Catalogue({ items }: { items: Item[] }) {
     set(n);
   };
 
-  const priceActive = pMin > bounds[0] || pMax < bounds[1];
   const activeCount =
-    (q ? 1 : 0) + fam.size + note.size + season.size + occasion.size + (conc ? 1 : 0) + vol.size + (priceActive ? 1 : 0);
+    (q ? 1 : 0) + fam.size + note.size + season.size + occasion.size + (conc ? 1 : 0) + vol.size + tierSel.size;
 
   const clearAll = () => {
     setQ("");
@@ -70,8 +71,7 @@ export default function Catalogue({ items }: { items: Item[] }) {
     setOccasion(new Set());
     setConc(null);
     setVol(new Set());
-    setPMin(bounds[0]);
-    setPMax(bounds[1]);
+    setTierSel(new Set());
   };
 
   const filtered = useMemo(
@@ -87,10 +87,10 @@ export default function Catalogue({ items }: { items: Item[] }) {
         if (occasion.size && !it.occasions.some((o) => occasion.has(o))) return false;
         if (conc && it.concentration !== conc) return false;
         if (vol.size && !vol.has(`${it.ml} ml`)) return false;
-        if (it.priceMax < pMin || it.priceMin > pMax) return false;
+        if (tierSel.size && !tierSel.has(it.tier)) return false;
         return true;
       }),
-    [items, q, fam, note, season, occasion, conc, vol, pMin, pMax]
+    [items, q, fam, note, season, occasion, conc, vol, tierSel]
   );
 
   return (
@@ -172,31 +172,27 @@ export default function Catalogue({ items }: { items: Item[] }) {
             <Checklist options={occasions} selected={occasion} onToggle={toggler(occasion, setOccasion)} />
           </Group>
 
-          <Group title="Price" count={priceActive ? 1 : 0}>
-            <div className={styles.price}>
-              <div className={styles.priceVals}>
-                <span>${pMin}</span>
-                <span>${pMax}</span>
-              </div>
-              <input
-                className={styles.range}
-                type="range"
-                min={bounds[0]}
-                max={bounds[1]}
-                value={pMin}
-                onChange={(e) => setPMin(Math.min(Number(e.target.value), pMax))}
-                aria-label="Minimum price"
-              />
-              <input
-                className={styles.range}
-                type="range"
-                min={bounds[0]}
-                max={bounds[1]}
-                value={pMax}
-                onChange={(e) => setPMax(Math.max(Number(e.target.value), pMin))}
-                aria-label="Maximum price"
-              />
-            </div>
+          <Group title="Price" count={tierSel.size}>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {tiers.map((t) => {
+                const on = tierSel.has(t.tier);
+                return (
+                  <li key={t.tier}>
+                    <button
+                      className={`${styles.opt} ${on ? styles.optOn : ""}`}
+                      onClick={() => toggler(tierSel, setTierSel)(t.tier)}
+                      aria-pressed={on}
+                    >
+                      <span className={styles.optMark} aria-hidden="true" />
+                      <span className={styles.tierOpt}>
+                        <span className={styles.tierSym}>{t.symbol}</span>
+                        {t.label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </Group>
 
           {activeCount > 0 && (
@@ -226,7 +222,17 @@ export default function Catalogue({ items }: { items: Item[] }) {
                     {it.concentration} · {it.ml} ml
                   </span>
                   <span className={styles.cardFamily}>{it.subFamily}</span>
-                  <span className={styles.cardPrice}>{it.priceLabel}</span>
+                  <span
+                    className={styles.cardTier}
+                    aria-label={`Price tier: ${it.tierLabel}`}
+                    title={it.tierLabel}
+                  >
+                    {[0, 1, 2, 3].map((k) => (
+                      <span key={k} className={k <= it.tierRank ? styles.tierOn : styles.tierOff}>
+                        $
+                      </span>
+                    ))}
+                  </span>
                 </Link>
               ))}
             </div>
