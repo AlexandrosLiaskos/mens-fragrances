@@ -2,6 +2,12 @@ import "server-only";
 import { getFragrances } from "./content";
 import type { Fragrance } from "./schema";
 
+/** deploy sub-path ("" locally, "/mens-fragrances" on GitHub Pages) */
+const BASE_PATH = process.env.PAGES_BASE_PATH ?? "";
+/** Prefix a public/ asset with the deploy basePath. next/image does NOT do this
+ *  for string srcs, so on a sub-path host the raw "/fragrances/…" would 404. */
+export const asset = (src: string) => (src.startsWith("/") ? `${BASE_PATH}${src}` : src);
+
 export const CONCENTRATION_LABEL: Record<string, string> = {
   EDP: "Eau de Parfum",
   EDT: "Eau de Toilette",
@@ -104,7 +110,7 @@ export function getSkus(): Sku[] {
           notes,
           seasons: f.seasons,
           occasions,
-          image: { src: item.src, alt: item.alt },
+          image: { src: asset(item.src), alt: item.alt },
           href: `/${f.slug}`,
         });
       }

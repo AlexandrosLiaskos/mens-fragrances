@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFragrances, getFragranceBySlug } from "@/lib/content";
-import { CONCENTRATION_LABEL, TIER_LABEL, tierSymbol, defaultSku, resolveImage } from "@/lib/catalog";
+import { CONCENTRATION_LABEL, TIER_LABEL, tierSymbol, asset, defaultSku, resolveImage } from "@/lib/catalog";
 import Reel, { type FilmData } from "@/components/film/Reel";
 
 export const dynamicParams = false;
@@ -26,7 +26,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${f.title} — ${f.brand}`,
       description: desc,
-      images: item ? [{ url: item.src, alt: item.alt }] : [],
+      images: item ? [{ url: asset(item.src), alt: item.alt }] : [],
     },
   };
 }
@@ -76,9 +76,9 @@ export default async function FragrancePage({
       ["Price", tier],
     ],
     items: {
-      bottle: { src: bottle.src, alt: bottle.alt },
-      atmos: atmos ? { src: atmos.src, alt: atmos.alt, pos: atmos.posDesktop ?? "50% 45%" } : null,
-      day: { src: day.src, alt: day.alt, pos: day.posDesktop ?? "50% 42%" },
+      bottle: { src: asset(bottle.src), alt: bottle.alt },
+      atmos: atmos ? { src: asset(atmos.src), alt: atmos.alt, pos: atmos.posDesktop ?? "50% 45%" } : null,
+      day: { src: asset(day.src), alt: day.alt, pos: day.posDesktop ?? "50% 42%" },
     },
   };
 
