@@ -152,10 +152,9 @@
 .optMarkSquare { border-radius: 1px; }
 .optOn .optMark { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 7px rgba(201, 162, 75, 0.5); }
 
-/* price range */
-.price { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.3rem 0 0.9rem; }
-.priceVals { display: flex; justify-content: space-between; font-family: var(--font-sans), sans-serif; font-size: 0.68rem; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
-.range { width: 100%; accent-color: var(--gold); cursor: pointer; background: transparent; }
+/* price tier */
+.tierOpt { display: inline-flex; align-items: baseline; gap: 0.55rem; }
+.tierSym { min-width: 2.6ch; color: var(--gold); letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 
 .clear {
   align-self: flex-start;
@@ -203,7 +202,9 @@
 .card:hover .cardName, .card:focus-visible .cardName { color: var(--gold-bright); }
 .cardVariant { margin-top: 0.15rem; font-family: var(--font-sans), sans-serif; font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-deep); }
 .cardFamily { margin-top: 0.15rem; font-family: var(--font-sans), sans-serif; font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-2); }
-.cardPrice { margin-top: 0.4rem; font-family: var(--font-serif), serif; font-size: 0.98rem; letter-spacing: 0.03em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.cardTier { margin-top: 0.4rem; font-family: var(--font-serif), serif; font-size: 0.98rem; letter-spacing: 0.14em; display: inline-flex; gap: 0.02em; }
+.tierOn { color: var(--gold); }
+.tierOff { color: var(--ink-3); opacity: 0.45; }
 .card:focus-visible { outline: none; }
 
 /* ---------- mobile filter drawer controls (hidden on desktop) ---------- */
