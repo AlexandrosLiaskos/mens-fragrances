@@ -13,6 +13,23 @@ export const CONCENTRATION_LABEL: Record<string, string> = {
   Cologne: "Cologne",
 };
 
+/** relative price bands, cheapest → dearest; the $-count is the array index + 1 */
+export const PRICE_TIERS = ["Budget", "Mid", "Premium", "Luxury"] as const;
+export const TIER_LABEL: Record<string, string> = {
+  Budget: "Budget",
+  Mid: "Mid-range",
+  Premium: "Premium",
+  Luxury: "Luxury",
+};
+/** "$", "$$", … from the tier's position in PRICE_TIERS */
+export const tierSymbol = (tier: string) => {
+  const i = PRICE_TIERS.indexOf(tier as (typeof PRICE_TIERS)[number]);
+  return "$".repeat(i < 0 ? 1 : i + 1);
+};
+/** 0-based rank for ordering ($ = 0 … $$$$ = 3); -1 if unknown */
+export const tierRank = (tier: string) =>
+  PRICE_TIERS.indexOf(tier as (typeof PRICE_TIERS)[number]);
+
 /** "NightOut" -> "Night Out" */
 export const humanize = (s: string) => s.replace(/([a-z])([A-Z])/g, "$1 $2");
 
@@ -50,9 +67,10 @@ export type Sku = {
   subFamily: string;
   concentration: string; // display label
   ml: number;
-  priceMin: number;
-  priceMax: number;
-  priceLabel: string;
+  tier: string; // controlled value, e.g. "Budget"
+  tierLabel: string; // human label, e.g. "Mid-range"
+  tierSymbol: string; // "$" … "$$$$"
+  tierRank: number; // 0-based position, for ordering the filter
   notes: string[];
   seasons: string[];
   occasions: string[];
@@ -70,13 +88,6 @@ export function getSkus(): Sku[] {
     for (const v of f.variants) {
       for (const s of v.sizes) {
         const item = resolveImage(f, v, s, "item") ?? f.images[0];
-        const priceMin = s.priceRange ? s.priceRange[0] : (s.price ?? 0);
-        const priceMax = s.priceRange ? s.priceRange[1] : (s.price ?? 0);
-        const priceLabel = s.priceRange
-          ? `$${s.priceRange[0]}–${s.priceRange[1]}`
-          : s.price != null
-            ? `$${s.price}`
-            : "—";
         out.push({
           id: `${f.slug}--${v.concentration}--${s.ml}`,
           fragranceSlug: f.slug,
@@ -86,9 +97,10 @@ export function getSkus(): Sku[] {
           subFamily,
           concentration: CONCENTRATION_LABEL[v.concentration] ?? v.concentration,
           ml: s.ml,
-          priceMin,
-          priceMax,
-          priceLabel,
+          tier: f.tier,
+          tierLabel: TIER_LABEL[f.tier] ?? f.tier,
+          tierSymbol: tierSymbol(f.tier),
+          tierRank: tierRank(f.tier),
           notes,
           seasons: f.seasons,
           occasions,

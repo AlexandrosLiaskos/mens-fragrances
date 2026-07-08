@@ -1,6 +1,8 @@
 import type { FragranceInput } from "@/lib/schema";
 
-/* Data hand-verified from Fragrantica / Parfumo / retailer listings.
+/* Facts (notes, accords, year, origin) hand-verified from Fragrantica / Parfumo.
+ * `tier` is a relative price band ($=Budget … $$$$=Luxury), not a sourced figure —
+ * Lattafa is a budget Arabic house, hence "Budget".
  * Imagery: hero / unboxing / packaging / in-hand / daylight are the owner's
  * own photographs; `bust` is cropped from the brand key art. */
 const hisConfession: FragranceInput = {
@@ -10,6 +12,7 @@ const hisConfession: FragranceInput = {
   releaseYear: 2024,
   origin: "United Arab Emirates",
   gender: "Masculine",
+  tier: "Budget",
 
   family: "Amber/Oriental",
   subFamily: "Amber Oriental Woody",
@@ -31,7 +34,7 @@ const hisConfession: FragranceInput = {
   occasions: ["Evening", "Formal", "NightOut"],
 
   variants: [
-    { concentration: "EDP", sizes: [{ ml: 100, priceRange: [36, 50] }], isDefault: true },
+    { concentration: "EDP", sizes: [{ ml: 100 }], isDefault: true },
   ],
 
   epigraph: "Tonka, you are my passion.",
