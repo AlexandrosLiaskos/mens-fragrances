@@ -52,18 +52,34 @@
 }
 .eyebrowGold { color: var(--gold); }
 
-/* ---------- reveal on chapter enter ---------- */
+/* ---------- reveal on chapter enter ----------
+   opacity + translate only (GPU-composited). No blur() — it janks on
+   full-screen panels. Content settles just after the slide, so each
+   chapter feels authored into place rather than hard-cut. */
 .rv {
   opacity: 0;
-  transform: translateY(22px);
-  filter: blur(5px);
-  transition: opacity 0.8s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
-  transition-delay: var(--d, 0.12s);
+  transform: translateY(26px);
+  transition: opacity 0.72s var(--ease), transform 0.92s var(--ease);
+  transition-delay: var(--d, 0.1s);
 }
 .panel[data-active="true"] .rv {
   opacity: 1;
   transform: none;
-  filter: none;
+}
+
+/* the imagery gets a slow focus-in: a scale settle + fade from shadow,
+   a touch longer than the 0.9s slide so the photo keeps breathing as the
+   panel arrives. This is what gives the main body its cinematic depth. */
+.bottle img,
+.fullImg img {
+  opacity: 0.5;
+  transform: scale(1.07);
+  transition: opacity 0.9s var(--ease), transform 1.2s var(--ease);
+}
+.panel[data-active="true"] .bottle img,
+.panel[data-active="true"] .fullImg img {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* ============================================================
@@ -80,9 +96,9 @@
   padding: 0 clamp(1.6rem, 7vw, 7rem);
 }
 .titleCopy { position: relative; z-index: 3; max-width: 40rem; }
-.titleCopy .rv:nth-child(1) { --d: 0.15s; }
-.titleCopy .rv:nth-child(2) { --d: 0.28s; }
-.titleCopy .rv:nth-child(3) { --d: 0.52s; }
+.titleCopy .rv:nth-child(1) { --d: 0.12s; }
+.titleCopy .rv:nth-child(2) { --d: 0.24s; }
+.titleCopy .rv:nth-child(3) { --d: 0.4s; }
 .bigTitle {
   font-family: var(--font-serif), serif;
   font-weight: 400;
@@ -284,7 +300,9 @@
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   .track { transition: none; }
-  .rv { transition: none; opacity: 1; transform: none; filter: none; }
+  .rv { transition: none; opacity: 1; transform: none; }
+  .bottle img,
+  .fullImg img { transition: none; opacity: 1; transform: none; }
   .meterFill { transition: none; }
   .hint { animation: none; }
 }
