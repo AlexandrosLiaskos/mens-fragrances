@@ -221,14 +221,6 @@
 .specKey { font-family: var(--font-sans), sans-serif; font-weight: 500; font-size: 0.56rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
 .specVal { font-family: var(--font-serif), serif; font-size: clamp(1.05rem, 1.6vw, 1.4rem); color: var(--ink-0); font-variant-numeric: tabular-nums; }
 .aside { font-family: var(--font-serif), serif; font-style: italic; font-size: clamp(1rem, 1.6vw, 1.3rem); color: var(--ink-2); margin: 0; }
-.cta {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: clamp(1rem, 2vh, 1.3rem) clamp(2rem, 4vw, 3rem);
-  border: 1px solid var(--gold); font-family: var(--font-sans), sans-serif; font-weight: 500;
-  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-0);
-  transition: border-color 0.4s var(--ease), color 0.4s var(--ease), background 0.4s var(--ease), box-shadow 0.6s var(--ease);
-}
-.cta:hover { border-color: var(--gold-bright); color: var(--gold-bright); background: rgba(201, 162, 75, 0.05); box-shadow: 0 0 30px -8px rgba(201, 162, 75, 0.4); }
 
 /* ============================================================
    HUD — persistent film frame
