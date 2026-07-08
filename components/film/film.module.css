@@ -231,7 +231,18 @@
 .progress { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(244, 241, 234, 0.08); }
 .progressBar { display: block; height: 100%; width: 100%; transform-origin: left; background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright)); transition: transform 0.9s var(--ease); }
 
-.brand { position: absolute; top: clamp(1.1rem, 2.4vw, 1.7rem); left: clamp(1.4rem, 4vw, 3rem); font-family: var(--font-serif), serif; font-size: 0.95rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-1); }
+.back {
+  position: absolute; top: clamp(1.1rem, 2.4vw, 1.7rem); left: clamp(1.4rem, 4vw, 3rem);
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-family: var(--font-sans), sans-serif; font-weight: 500;
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-2); transition: color 0.4s var(--ease);
+}
+.back:hover { color: var(--gold); }
+.backArrow { color: var(--gold); font-size: 0.95rem; line-height: 1; transition: transform 0.4s var(--ease); }
+.back:hover .backArrow { transform: translateX(-4px); }
+
+.brand { position: absolute; top: clamp(1.1rem, 2.4vw, 1.7rem); left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--font-serif), serif; font-size: 0.95rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-1); }
 .counter { position: absolute; top: clamp(1.1rem, 2.4vw, 1.7rem); right: clamp(1.4rem, 4vw, 3rem); font-family: var(--font-sans), sans-serif; font-size: 0.72rem; letter-spacing: 0.16em; color: var(--ink-3); display: flex; gap: 0.4rem; align-items: baseline; }
 .counterNow { color: var(--gold); }
 
@@ -280,7 +291,7 @@
   .spec { grid-template-columns: repeat(2, 1fr); }
 
   .prev, .next { display: none; }
-  .brand { font-size: 0.8rem; }
+  .brand { display: none; } /* title shows large in chapter 1; avoid crowding the back link */
   .dotLabel { display: none; }
   .rail { gap: 0.9rem; bottom: clamp(1.2rem, 3vh, 1.8rem); }
   .fullCopy { padding-bottom: clamp(5rem, 16vh, 8rem); }

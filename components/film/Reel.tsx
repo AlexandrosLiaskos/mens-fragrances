@@ -8,6 +8,7 @@ import {
   type CSSProperties,
 } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./film.module.css";
 
 type Img = { src: string; alt: string; pos?: string };
@@ -271,6 +272,11 @@ export default function Reel({ data }: { data: FilmData }) {
 
       {/* ---------- persistent film HUD ---------- */}
       <div className={styles.hud}>
+        <Link href="/" className={styles.back} aria-label="Back to the collection">
+          <span className={styles.backArrow} aria-hidden="true">&larr;</span>
+          <span className={styles.backLabel}>Collection</span>
+        </Link>
+
         <div className={styles.progress}>
           <span
             className={styles.progressBar}
