@@ -36,9 +36,10 @@ export default function Reel({ data }: { data: FilmData }) {
   const chapters = [
     { id: "title", label: "Confession" },
     ...(data.items.atmos ? [{ id: "atmos", label: "In the Dark" }] : []),
+    // the two photographic mood scenes sit together: dark then light
+    { id: "light", label: "In Light" },
     { id: "notes", label: "The Notes" },
     { id: "accord", label: "The Character" },
-    { id: "light", label: "In Light" },
     { id: "acquire", label: "Acquire" },
   ];
   const n = chapters.length;
