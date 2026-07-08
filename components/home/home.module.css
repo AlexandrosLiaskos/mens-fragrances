@@ -1,0 +1,233 @@
+/* ============================================================
+   HOME — "The Cabinet"
+   A cinematic dark index: each fragrance is a poster you enter.
+   Same noir language as /film. Self-contained; global :root tokens.
+   ============================================================ */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #030304;
+  color: var(--ink-1);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  isolation: isolate;
+}
+/* matched to the bottle's own black (rgb 3,3,4) so the cut-out melds
+   perfectly — only an edge vignette (darkening, never lightening) for depth */
+.ground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(125% 105% at 50% 48%, transparent 56%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ---------- masthead ---------- */
+.mast {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.4rem, 3vw, 2.3rem) clamp(1.6rem, 5vw, 4rem);
+  opacity: 0;
+  animation: fade 1s var(--ease) 0.1s forwards;
+}
+.wordmark {
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+}
+.tag {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+/* ---------- intro line ---------- */
+.intro {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: clamp(1rem, 3vh, 2rem) clamp(1.6rem, 6vw, 6rem) 0;
+  opacity: 0;
+  animation: fade 1s var(--ease) 0.25s forwards;
+}
+.introEyebrow {
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 500;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 0.9rem;
+}
+.introLine {
+  font-family: var(--font-serif), serif;
+  font-style: italic;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  line-height: 1.4;
+  color: var(--ink-1);
+  margin: 0 auto;
+  max-width: 30ch;
+}
+
+/* ---------- rail of covers ---------- */
+.rail {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding: clamp(1rem, 3vh, 2rem) clamp(1.6rem, 6vw, 6rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+.railSingle { justify-content: center; }
+
+.cover {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(84vw, 360px);
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0;
+  transform: translateY(26px);
+  animation: coverIn 1.1s var(--ease) forwards;
+  animation-delay: var(--d, 0.35s);
+}
+.coverImg {
+  position: relative;
+  height: min(56vh, 600px);
+  aspect-ratio: 722 / 2528;
+  margin: 0 auto;
+}
+.coverImg img {
+  object-fit: cover;
+  transition: transform 0.8s var(--ease);
+  -webkit-mask-image:
+    linear-gradient(180deg, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
+  mask-image:
+    linear-gradient(180deg, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.cover:hover .coverImg img,
+.cover:focus-visible .coverImg img { transform: scale(1.035); }
+.coverPool {
+  position: absolute;
+  inset: -12% -34%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(150, 168, 200, 0.1), transparent 70%);
+  filter: blur(34px);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+}
+.cover:hover .coverPool,
+.cover:focus-visible .coverPool { opacity: 1; }
+
+.coverMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: clamp(1rem, 2.6vh, 1.8rem);
+}
+.coverEyebrow {
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 500;
+  font-size: 0.6rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.coverName {
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.9rem, 3.6vw, 2.9rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--ink-0);
+}
+.coverFamily {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.coverEnter {
+  margin-top: clamp(0.9rem, 2vh, 1.5rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 500;
+  font-size: 0.62rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.55;
+  transition: opacity 0.4s var(--ease);
+}
+.coverEnter .arrow { display: inline-block; transition: transform 0.4s var(--ease); }
+.cover:hover .coverEnter,
+.cover:focus-visible .coverEnter { opacity: 1; }
+.cover:hover .coverEnter .arrow,
+.cover:focus-visible .coverEnter .arrow { transform: translateX(5px); }
+
+/* ---------- footer hint ---------- */
+.foot {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: clamp(1rem, 3vh, 1.8rem);
+  opacity: 0;
+  animation: fade 1s var(--ease) 0.6s forwards;
+}
+.footHint {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+@keyframes coverIn { to { opacity: 1; transform: none; } }
+@keyframes fade { to { opacity: 1; } }
+
+.cover:focus-visible { outline: none; }
+.cover:focus-visible .coverName { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 6px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 640px) {
+  .rail { gap: 2rem; padding-inline: 10vw; }
+  .cover { width: 80vw; }
+  .coverImg { height: 46vh; }
+  .introLine { font-size: 1.15rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mast, .intro, .foot { opacity: 1; animation: none; }
+  .cover { opacity: 1; transform: none; animation: none; }
+  .coverImg img { transition: none; }
+}
