@@ -12,8 +12,10 @@ const nextConfig = {
   basePath,
   // dir-index files (/slug/index.html) that Pages serves reliably
   trailingSlash: true,
-  // the default next/image optimizer needs a server Pages can't provide
-  images: { unoptimized: true },
+  // the default next/image optimizer needs a server Pages can't provide;
+  // instead a build-time WebP ladder (scripts/optimize-images.mjs) plus a
+  // custom loader gives real srcsets on a dumb static host
+  images: { loader: "custom", loaderFile: "./lib/imageLoader.ts" },
 };
 
 export default nextConfig;

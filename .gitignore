@@ -22,9 +22,13 @@ yarn-error.log*
 /backups/
 /content/_source/
 
-# local verification artifacts (dev screenshots + playwright)
+# local verification artifacts (dev screenshots + playwright + lighthouse)
 /*.jpeg
 /.playwright-mcp/
+/perf-reports/
+
+# generated responsive image ladder (rebuilt by the pre{dev,build} hooks)
+public/fragrances/**/*.w[0-9]*.webp
 
 # vercel
 .vercel

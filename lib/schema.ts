@@ -30,15 +30,40 @@ const Image = z.object({
   fit: z.enum(["cover", "contain"]).default("cover"),
   /** intrinsic aspect ratio (width / height) — drives the framed plate */
   ar: z.number().positive().optional(),
+  /** tiny small-caps caption under a gallery plate (editorial role) */
+  caption: z.string().optional(),
 });
 
 const Theme = z.object({
-  accent: z.string(),
+  /** 6-digit hex — used to derive the metal gradient, so no rgb()/names */
+  accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accentGlow: z.string(),
+  /** lighter / darker companions of the accent; default to the accent itself */
+  accentBright: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  accentDeep: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   bg0: z.string().optional(),
   bg1: z.string().optional(),
   navy: z.string().optional(),
   metal: Metal.default("gold"),
+});
+
+/** Per-fragrance copy for the film chapters; anything omitted falls back to
+ *  the shared defaults applied in app/[slug]/page.tsx. */
+const FilmCopy = z.object({
+  /** rail label of the opening chapter (default "Overture") */
+  chapterOne: z.string().optional(),
+  /** rail labels of the two photographic chapters */
+  darkLabel: z.string().optional(),
+  lightLabel: z.string().optional(),
+  /** kicker + line over the dark full-bleed scene (kicker defaults to the family) */
+  darkKicker: z.string().optional(),
+  darkLine: z.string().optional(),
+  /** kicker + line over the daylight full-bleed scene */
+  lightKicker: z.string().optional(),
+  lightLine: z.string().optional(),
+  /** the campaign gallery chapter (rendered when editorial images exist) */
+  galleryLabel: z.string().optional(),
+  galleryKicker: z.string().optional(),
 });
 
 /* the leaf of the hierarchy: a concrete SKU = one volume of one concentration */
@@ -86,6 +111,16 @@ export const FragranceSchema = z.object({
   /** notes to visually emphasise (e.g. the signature note) */
   signatureNotes: z.array(z.string()).default([]),
 
+  /** the nose(s) behind the composition, when known */
+  perfumers: z.array(z.string()).default([]),
+  /** Fragrantica community verdicts, qualitative (e.g. "Long lasting", "Moderate") */
+  stats: z
+    .object({
+      longevity: z.string().optional(),
+      sillage: z.string().optional(),
+    })
+    .optional(),
+
   seasons: z.array(Season),
   occasions: z.array(Occasion),
 
@@ -94,6 +129,8 @@ export const FragranceSchema = z.object({
   /** one short, evocative line — the minimalist stand-in for the full poem */
   epigraph: z.string().optional(),
   descriptor: z.string(),
+  /** per-fragrance chapter labels + scene copy for the film reel */
+  film: FilmCopy.optional(),
 
   images: z.array(Image).min(1),
 

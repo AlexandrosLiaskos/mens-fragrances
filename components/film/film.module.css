@@ -6,15 +6,22 @@
    ============================================================ */
 
 .stage {
+  /* the cut from the collection: the film opens from black, with the
+     site's own long settle rather than a utilitarian fade */
+  animation: stageIn 0.9s var(--ease) both;
   position: fixed;
   inset: 0;
   overflow: hidden;
+  /* keep vertical flicks for chapter navigation — no browser bounce or
+     pull-to-refresh stealing the gesture */
+  overscroll-behavior: none;
   background: #030304; /* = the bottle's own black, matched to the home so it melds */
   z-index: 1;
   font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--ink-1);
   isolation: isolate;
 }
+@keyframes stageIn { from { opacity: 0; } to { opacity: 1; } }
 .ground {
   position: absolute;
   inset: 0;
@@ -121,7 +128,8 @@
   justify-self: center;
   align-self: center;
   height: min(84vh, 940px);
-  aspect-ratio: 722 / 2528;
+  /* intrinsic width/height of the item image, injected per fragrance */
+  aspect-ratio: var(--bottle-ar, 0.286);
 }
 .bottle img {
   object-fit: cover;
@@ -133,6 +141,12 @@
     linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
+}
+/* transparent cut-outs need no edge fade — show the whole silhouette */
+.bottleContain img {
+  object-fit: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 /* no glow behind the bottle — it sits on flat black and melds, as on the home */
 .pool { display: none; }
@@ -167,29 +181,157 @@
 }
 
 /* ============================================================
-   CHAPTER · NOTES
+   CHAPTER · GALLERY — the house's campaign plates
+   ============================================================ */
+.gallery {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(1.2rem, 3.4vh, 2.4rem);
+  padding: clamp(3.4rem, 8vh, 5rem) clamp(1.2rem, 4vw, 4rem);
+}
+.plates {
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(1rem, 2.4vw, 2.4rem);
+  width: 100%;
+}
+.plate { margin: 0; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+/* a quiet stagger so the row reads as a hung salon wall, not a strip */
+.plate:nth-child(odd) { margin-bottom: clamp(1.2rem, 5vh, 3.4rem); }
+.plate:nth-child(even) { margin-top: clamp(1.2rem, 5vh, 3.4rem); }
+.plateImg {
+  position: relative;
+  /* the row must hold every plate at its true ratio: cap the height so the
+     summed widths ((height x ar) each) never exceed the stage */
+  height: min(clamp(280px, 56vh, 620px), calc((88vw - 8rem) / var(--ar-sum, 2.2)));
+  aspect-ratio: var(--plate-ar, 0.75);
+  max-width: 60vw;
+  border: 1px solid var(--hair-faint);
+  background: var(--bg-sink);
+  overflow: hidden;
+}
+/* landscape-leaning sets: wrap into a two-row salon wall instead of shrinking */
+.platesWrap { flex-wrap: wrap; max-width: min(88vw, 1280px); margin: 0 auto; }
+.platesWrap .plate:nth-child(odd), .platesWrap .plate:nth-child(even) { margin: 0; }
+.platesWrap .plateImg { height: clamp(180px, 26vh, 330px); }
+.plateImg img { object-fit: cover; transition: transform 0.9s var(--ease); }
+.plate:hover .plateImg img { transform: scale(1.035); }
+.plateCap {
+  font-family: var(--font-sans), sans-serif; font-weight: 500;
+  font-size: 0.58rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.plateNo { color: var(--gold); margin-right: 0.9em; }
+.plateBtn {
+  display: block; margin: 0; padding: 0; border: none; background: none;
+  cursor: zoom-in; text-align: inherit;
+}
+.plateBtn:focus-visible { outline: 1px solid var(--gold); outline-offset: 4px; }
+
+/* ---------- the lightbox: a plate lifted off the wall ---------- */
+.lightbox {
+  position: fixed; inset: 0; z-index: 140;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(2.4rem, 6vh, 4rem) clamp(3.4rem, 7vw, 6rem);
+  background: rgba(4, 5, 8, 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  cursor: zoom-out;
+  animation: lbIn 0.35s var(--ease);
+}
+@keyframes lbIn { from { opacity: 0; } to { opacity: 1; } }
+.lbFigure {
+  margin: 0; cursor: default;
+  display: flex; flex-direction: column; align-items: center;
+  gap: clamp(0.8rem, 2vh, 1.2rem);
+  animation: lbSettle 0.5s var(--ease);
+}
+@keyframes lbSettle {
+  from { opacity: 0; transform: scale(0.965) translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.lbImg {
+  position: relative;
+  /* the plate at its true ratio, as large as the room allows */
+  width: min(88vw, calc(78vh * var(--lb-ar, 1.5)));
+  aspect-ratio: var(--lb-ar, 1.5);
+  max-height: 78vh;
+  border: 1px solid var(--hair);
+  background: var(--bg-sink);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+}
+.lbCap {
+  max-width: min(88vw, 72ch);
+  text-align: center;
+  font-family: var(--font-sans), sans-serif; font-weight: 500;
+  font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-1);
+}
+.lbAlt {
+  display: block; margin-top: 0.55rem;
+  font-family: var(--font-serif), serif; font-style: italic; font-weight: 400;
+  font-size: 0.92rem; letter-spacing: 0.02em; text-transform: none;
+  line-height: 1.5; color: var(--ink-2);
+}
+.lbClose {
+  position: absolute; top: clamp(1rem, 2.6vh, 1.6rem); right: clamp(1.2rem, 2.6vw, 2rem);
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--hair); background: none;
+  color: var(--ink-1); font-size: 1.5rem; line-height: 1;
+  cursor: pointer; transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.lbClose:hover { color: var(--gold); border-color: var(--hair-strong); }
+.lbNav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  border: none; background: none; padding: 0.6rem;
+  color: var(--ink-2); font-size: 1.3rem; cursor: pointer;
+  transition: color 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+.lbNav:hover:not(:disabled) { color: var(--gold); }
+.lbNav:disabled { opacity: 0.25; cursor: default; }
+.lbPrev { left: clamp(0.8rem, 2vw, 1.8rem); }
+.lbNext { right: clamp(0.8rem, 2vw, 1.8rem); }
+.lbCount {
+  position: absolute; bottom: clamp(0.9rem, 2.4vh, 1.5rem); left: 50%; transform: translateX(-50%);
+  font-family: var(--font-sans), sans-serif; font-size: 0.62rem;
+  letter-spacing: 0.22em; color: var(--ink-3);
+}
+
+/* ============================================================
+   CHAPTER · NOTES — the olfactory pyramid, banded like a score
    ============================================================ */
 .notes {
   width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center;
   padding: 0 clamp(1.6rem, 7vw, 7rem);
 }
-.tiers {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
-  margin-top: clamp(2rem, 5vh, 4rem); max-width: 1200px;
+.pyramid { margin-top: clamp(1.8rem, 4.5vh, 3.2rem); max-width: 1160px; width: 100%; }
+.band {
+  display: grid; grid-template-columns: minmax(190px, 0.9fr) 3.1fr;
+  align-items: start; column-gap: clamp(1.4rem, 4vw, 3.4rem);
+  padding: clamp(1.5rem, 3.6vh, 2.6rem) 0;
+  border-top: 1px solid var(--hair-faint);
 }
-.tier {
-  display: flex; flex-direction: column; gap: clamp(1rem, 2.4vh, 1.6rem);
-  padding: clamp(1.4rem, 3vh, 2.4rem) clamp(1rem, 2.4vw, 2.4rem);
-  border-left: 1px solid rgba(244, 241, 234, 0.1);
+.band:last-child { border-bottom: 1px solid var(--hair-faint); }
+.bandLabel { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.5em; }
+.bandHead { display: flex; align-items: baseline; gap: 0.85rem; }
+.bandRoman {
+  font-family: var(--font-serif), serif; font-weight: 400;
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem); line-height: 1; color: var(--gold);
 }
-.tier:first-child { border-left: none; padding-left: 0; }
-.tierLabel { font-family: var(--font-sans), sans-serif; font-weight: 500; font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); }
-.tierNotes { display: flex; flex-direction: column; gap: clamp(0.5rem, 1.4vh, 0.9rem); }
-.note { font-family: var(--font-serif), serif; font-size: clamp(1.3rem, 2.2vw, 1.9rem); line-height: 1.15; color: var(--ink-1); }
-.noteSig {
-  font-family: var(--font-serif), serif; font-size: clamp(1.3rem, 2.2vw, 1.9rem); line-height: 1.15;
-  color: var(--ink-0); border-bottom: 1px solid var(--gold); padding-bottom: 2px; width: fit-content;
+.bandTier {
+  font-family: var(--font-sans), sans-serif; font-weight: 500;
+  font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-1);
 }
+.bandWhisper {
+  font-family: var(--font-serif), serif; font-style: italic;
+  font-size: clamp(0.85rem, 1.1vw, 0.98rem); color: var(--ink-3); letter-spacing: 0.02em;
+}
+.bandNotes {
+  margin: 0; font-family: var(--font-serif), serif;
+  font-size: clamp(1.45rem, 2.5vw, 2.15rem); line-height: 1.5;
+  color: var(--ink-1); letter-spacing: 0.01em;
+}
+.bandSep { color: var(--gold-deep); margin: 0 0.5em; font-size: 0.75em; vertical-align: 0.12em; }
+.noteSig { color: var(--ink-0); border-bottom: 1px solid var(--gold); padding-bottom: 2px; }
 
 /* ============================================================
    CHAPTER · CHARACTER (accords)
@@ -210,16 +352,39 @@
 .panel[data-active="true"] .meterFill { width: var(--w); }
 
 /* ============================================================
-   CHAPTER · ACQUIRE
+   CHAPTER · EPILOGUE — the colophon plate
    ============================================================ */
-.acquire {
+.colophon {
   width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;
-  text-align: center; padding: 0 clamp(1.6rem, 7vw, 7rem); gap: clamp(1.6rem, 4vh, 2.6rem);
+  text-align: center; padding: 0 clamp(1.6rem, 7vw, 7rem); gap: clamp(2rem, 4.6vh, 3rem);
 }
-.spec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2.2rem) clamp(2rem, 5vw, 4rem); max-width: 860px; }
-.specRow { display: flex; flex-direction: column; gap: 0.5rem; text-align: left; }
-.specKey { font-family: var(--font-sans), sans-serif; font-weight: 500; font-size: 0.56rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
-.specVal { font-family: var(--font-serif), serif; font-size: clamp(1.05rem, 1.6vw, 1.4rem); color: var(--ink-0); font-variant-numeric: tabular-nums; }
+.factGrid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%; max-width: 1020px; margin: 0;
+  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+}
+.factGrid[data-cols="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 1120px; }
+.fact {
+  text-align: left;
+  padding: clamp(1.3rem, 3.2vh, 2.1rem) clamp(1rem, 1.8vw, 1.6rem);
+  border-right: 1px solid var(--hair-faint);
+  border-top: 1px solid var(--hair-faint);
+}
+.factGrid[data-cols="3"] .fact:nth-child(3n) { border-right: none; }
+.factGrid[data-cols="3"] .fact:nth-child(-n + 3) { border-top: none; }
+.factGrid[data-cols="4"] .fact:nth-child(4n) { border-right: none; }
+.factGrid[data-cols="4"] .fact:nth-child(-n + 4) { border-top: none; }
+.factKey {
+  display: block; font-family: var(--font-sans), sans-serif; font-weight: 500;
+  font-size: 0.56rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-3);
+}
+.factVal {
+  display: block; margin: 0.6rem 0 0;
+  font-family: var(--font-serif), serif; font-size: clamp(1.1rem, 1.8vw, 1.55rem);
+  line-height: 1.25; color: var(--ink-0); font-feature-settings: "onum" 1;
+}
+.colophonEnd { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+.colophonRule { display: block; height: 1px; width: 76px; background: var(--metal-gold-h); }
 .aside { font-family: var(--font-serif), serif; font-style: italic; font-size: clamp(1rem, 1.6vw, 1.3rem); color: var(--ink-2); margin: 0; }
 
 /* ============================================================
@@ -275,7 +440,7 @@
    ============================================================ */
 @media (max-width: 900px) {
   .title { display: block; }
-  .bottle { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); height: 60%; aspect-ratio: 722 / 2528; }
+  .bottle { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); height: 60%; aspect-ratio: var(--bottle-ar, 0.286); }
   .titleCopy {
     position: absolute; left: 0; right: 0; bottom: 0; max-width: none; text-align: center;
     padding: clamp(3rem, 12vh, 6rem) clamp(1.4rem, 6vw, 2rem) clamp(4.5rem, 13vh, 6.5rem);
@@ -283,12 +448,27 @@
   }
   .bigTitle { font-size: clamp(2.8rem, 13vw, 4.6rem); }
 
-  .tiers { grid-template-columns: 1fr; gap: 0; margin-top: clamp(1.4rem, 4vh, 2rem); }
-  .tier { border-left: none; border-top: 1px solid rgba(244, 241, 234, 0.1); padding: clamp(1rem, 3vh, 1.6rem) 0; }
-  .tier:first-child { border-top: none; }
-  .tierNotes { flex-flow: row wrap; gap: 0.4rem 1.2rem; }
+  .gallery { padding: clamp(3.2rem, 9vh, 4.4rem) clamp(1rem, 4vw, 1.6rem); }
+  .lightbox { padding: 3.2rem 0.9rem 2.6rem; }
+  .lbImg { width: min(94vw, calc(70vh * var(--lb-ar, 1.5))); max-height: 70vh; }
+  .lbNav { display: none; } /* swipe pages the plates on touch */
+  .lbAlt { font-size: 0.8rem; }
+  .plates { flex-wrap: wrap; gap: 0.9rem 0.8rem; align-items: flex-start; }
+  .plate:nth-child(odd), .plate:nth-child(even) { margin: 0; }
+  .plateImg { height: clamp(180px, 30vh, 320px); max-width: 44vw; }
+  .plateCap { font-size: 0.52rem; letter-spacing: 0.18em; }
 
-  .spec { grid-template-columns: repeat(2, 1fr); }
+  .pyramid { margin-top: clamp(1.2rem, 3.5vh, 2rem); }
+  .band { grid-template-columns: 1fr; row-gap: 0.7rem; padding: clamp(1.1rem, 2.8vh, 1.7rem) 0; }
+  .bandLabel { flex-direction: row; align-items: baseline; gap: 0.8rem; padding-top: 0; }
+  .bandNotes { font-size: clamp(1.15rem, 4.8vw, 1.5rem); line-height: 1.55; }
+
+  .colophon { gap: clamp(1.4rem, 3.4vh, 2rem); }
+  .factGrid[data-cols="3"], .factGrid[data-cols="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .factGrid[data-cols="3"] .fact:nth-child(n), .factGrid[data-cols="4"] .fact:nth-child(n) { border-right: none; border-top: 1px solid var(--hair-faint); }
+  .factGrid[data-cols="3"] .fact:nth-child(odd), .factGrid[data-cols="4"] .fact:nth-child(odd) { border-right: 1px solid var(--hair-faint); }
+  .factGrid[data-cols="3"] .fact:nth-child(-n + 2), .factGrid[data-cols="4"] .fact:nth-child(-n + 2) { border-top: none; }
+  .fact { padding: clamp(0.9rem, 2.2vh, 1.3rem) 0.9rem; }
 
   .prev, .next { display: none; }
   .brand { display: none; } /* title shows large in chapter 1; avoid crowding the back link */
@@ -298,14 +478,5 @@
   .hint { display: none; }
 }
 
-/* ============================================================
-   REDUCED MOTION
-   ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  .track { transition: none; }
-  .rv { transition: none; opacity: 1; transform: none; }
-  .bottle img,
-  .fullImg img { transition: none; opacity: 1; transform: none; }
-  .meterFill { transition: none; }
-  .hint { animation: none; }
-}
+/* Reduced-motion suppression intentionally removed: the owner wants the
+   film to play identically on every machine (2026-07-10). */

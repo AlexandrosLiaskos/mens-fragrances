@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useRef,
@@ -11,7 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import styles from "./film.module.css";
 
-type Img = { src: string; alt: string; pos?: string };
+type Img = { src: string; alt: string; pos?: string; ar?: number; fit?: "cover" | "contain" };
+type Plate = Img & { caption?: string };
 
 export type FilmData = {
   brand: string;
@@ -26,27 +28,62 @@ export type FilmData = {
   signature: string[];
   accords: { name: string; intensity: number }[];
   inspiredBy: string;
+  /** per-fragrance chapter labels + scene copy (defaults resolved server-side) */
+  film: {
+    chapterOne: string;
+    darkLabel: string;
+    lightLabel: string;
+    darkKicker: string;
+    darkLine: string;
+    lightKicker: string;
+    lightLine: string;
+    galleryLabel: string;
+    galleryKicker: string;
+  };
   specs: [string, string][];
-  items: { bottle: Img; atmos: Img | null; day: Img };
+  items: { bottle: Img; atmos: Img | null; day: Img; gallery: Plate[] };
 };
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
-export default function Reel({ data }: { data: FilmData }) {
+export default function Reel({
+  data,
+  themeStyle,
+}: {
+  data: FilmData;
+  themeStyle?: CSSProperties;
+}) {
   const chapters = [
-    { id: "title", label: "Confession" },
-    ...(data.items.atmos ? [{ id: "atmos", label: "In the Dark" }] : []),
+    { id: "title", label: data.film.chapterOne },
+    ...(data.items.atmos ? [{ id: "atmos", label: data.film.darkLabel }] : []),
     // the two photographic mood scenes sit together: dark then light
-    { id: "light", label: "In Light" },
+    { id: "light", label: data.film.lightLabel },
+    // the house's own campaign imagery, when we have it
+    ...(data.items.gallery.length ? [{ id: "gallery", label: data.film.galleryLabel }] : []),
     { id: "notes", label: "The Notes" },
     { id: "accord", label: "The Character" },
-    { id: "acquire", label: "Acquire" },
+    { id: "acquire", label: "Epilogue" },
   ];
   const n = chapters.length;
 
   const [i, setI] = useState(0);
   const stageRef = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
+
+  /* lightbox over the gallery chapter: index into items.gallery, or null */
+  const [view, setView] = useState<number | null>(null);
+  const viewRef = useRef<number | null>(null);
+  viewRef.current = view;
+  const galleryLen = data.items.gallery.length;
+
+  /* arriving from the collection: let the stage finish rising out of
+     black before the opening chapter cascades in, so the entrance reads
+     black → ground → bottle breathing in → the type, one layer at a time */
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setReady(true), 320);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const goto = useCallback(
     (idx: number) => setI(() => Math.max(0, Math.min(n - 1, idx))),
@@ -57,9 +94,22 @@ export default function Reel({ data }: { data: FilmData }) {
     [n]
   );
 
-  /* keyboard */
+  /* keyboard — while the lightbox is open, arrows page the plates instead */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (viewRef.current !== null) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setView(null);
+        } else if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) {
+          e.preventDefault();
+          setView((v) => (v === null ? v : Math.min(galleryLen - 1, v + 1)));
+        } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
+          e.preventDefault();
+          setView((v) => (v === null ? v : Math.max(0, v - 1)));
+        }
+        return;
+      }
       if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) {
         e.preventDefault();
         go(1);
@@ -71,7 +121,7 @@ export default function Reel({ data }: { data: FilmData }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, goto, n]);
+  }, [go, goto, n, galleryLen]);
 
   /* wheel / trackpad — vertical or horizontal advances chapters */
   useEffect(() => {
@@ -79,6 +129,7 @@ export default function Reel({ data }: { data: FilmData }) {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (viewRef.current !== null) return; // the lightbox holds the reel still
       if (lock.current) return;
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       if (Math.abs(d) < 14) return;
@@ -104,7 +155,25 @@ export default function Reel({ data }: { data: FilmData }) {
     const te = (e: TouchEvent) => {
       const dx = e.changedTouches[0].clientX - sx;
       const dy = e.changedTouches[0].clientY - sy;
-      if (Math.abs(dx) > 46 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      if (ax < 46 && ay < 46) return;
+      const horizontal = ax >= ay;
+      if (viewRef.current !== null) {
+        if (horizontal) {
+          // sideways pages the open lightbox…
+          setView((v) =>
+            v === null ? v : dx < 0 ? Math.min(galleryLen - 1, v + 1) : Math.max(0, v - 1)
+          );
+        } else {
+          // …a vertical flick dismisses the plate
+          setView(null);
+        }
+        return;
+      }
+      // vertical swipes read like scrolling a page: up = onward, down = back
+      if (horizontal) go(dx < 0 ? 1 : -1);
+      else go(dy < 0 ? 1 : -1);
     };
     el.addEventListener("touchstart", ts, { passive: true });
     el.addEventListener("touchend", te, { passive: true });
@@ -112,13 +181,20 @@ export default function Reel({ data }: { data: FilmData }) {
       el.removeEventListener("touchstart", ts);
       el.removeEventListener("touchend", te);
     };
-  }, [go]);
+  }, [go, galleryLen]);
 
   const sig = new Set(data.signature.map((s) => s.toLowerCase()));
   const isSig = (note: string) => sig.has(note.toLowerCase());
 
+  /* gallery geometry: portrait-leaning sets sit in one exact-ratio row,
+     landscape-leaning sets wrap into a salon wall — never crop */
+  const galleryArs = data.items.gallery.map((g) => g.ar ?? 0.75);
+  const galleryArSum = galleryArs.reduce((a, b) => a + b, 0);
+  const galleryWide =
+    galleryArs.length > 0 && galleryArSum / galleryArs.length > 1.25;
+
   return (
-    <div className={styles.stage} ref={stageRef}>
+    <div className={styles.stage} ref={stageRef} style={themeStyle}>
       <div className={styles.ground} aria-hidden="true" />
 
       <div
@@ -129,7 +205,7 @@ export default function Reel({ data }: { data: FilmData }) {
           <section
             key={c.id}
             className={styles.panel}
-            data-active={idx === i}
+            data-active={ready && idx === i}
             aria-hidden={idx !== i}
           >
             {c.id === "title" && (
@@ -141,7 +217,16 @@ export default function Reel({ data }: { data: FilmData }) {
                   <h1 className={`${styles.bigTitle} ${styles.rv}`}>{data.title}</h1>
                   <p className={`${styles.epi} ${styles.rv}`}>&ldquo;{data.epigraph}&rdquo;</p>
                 </div>
-                <div className={styles.bottle}>
+                <div
+                  className={`${styles.bottle} ${
+                    data.items.bottle.fit === "contain" ? styles.bottleContain : ""
+                  }`}
+                  style={
+                    {
+                      "--bottle-ar": String(data.items.bottle.ar ?? 0.286),
+                    } as CSSProperties
+                  }
+                >
                   <div className={styles.pool} aria-hidden="true" />
                   <Image
                     src={data.items.bottle.src}
@@ -156,11 +241,59 @@ export default function Reel({ data }: { data: FilmData }) {
 
             {c.id === "atmos" && data.items.atmos && (
               <FullFrame img={data.items.atmos}>
-                <p className={`${styles.frameKicker} ${styles.rv}`}>{data.family}</p>
-                <p className={`${styles.frameLine} ${styles.rv}`}>
-                  Warmth, confessed in the dark.
-                </p>
+                <p className={`${styles.frameKicker} ${styles.rv}`}>{data.film.darkKicker}</p>
+                <p className={`${styles.frameLine} ${styles.rv}`}>{data.film.darkLine}</p>
               </FullFrame>
+            )}
+
+            {c.id === "gallery" && data.items.gallery.length > 0 && (
+              <div className={styles.gallery}>
+                <p className={`${styles.eyebrow} ${styles.eyebrowGold} ${styles.rv}`}>
+                  {data.film.galleryKicker}
+                </p>
+                <div
+                  className={`${styles.plates} ${galleryWide ? styles.platesWrap : ""}`}
+                  data-count={data.items.gallery.length}
+                  style={{ "--ar-sum": String(galleryArSum || 2.2) } as CSSProperties}
+                >
+                  {data.items.gallery.map((g, k) => (
+                    <figure
+                      className={`${styles.plate} ${styles.rv}`}
+                      key={g.src}
+                      style={
+                        {
+                          "--d": `${0.14 + k * 0.13}s`,
+                          "--plate-ar": String(g.ar ?? 0.75),
+                        } as CSSProperties
+                      }
+                    >
+                      <button
+                        type="button"
+                        className={styles.plateBtn}
+                        onClick={() => setView(k)}
+                        aria-label={`View plate ${k + 1}${g.caption ? ` — ${g.caption}` : ""}`}
+                        aria-haspopup="dialog"
+                      >
+                        <div className={styles.plateImg}>
+                          <Image
+                            src={g.src}
+                            alt={g.alt}
+                            fill
+                            sizes="(max-width: 900px) 50vw, 33vw"
+                            style={{ objectPosition: g.pos ?? "50% 50%" }}
+                          />
+                        </div>
+                      </button>
+                      <figcaption className={styles.plateCap}>
+                        <span className={styles.plateNo}>
+                          {String(k + 1).padStart(2, "0")}
+                        </span>
+                        {g.caption ?? ""}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
             )}
 
             {c.id === "notes" && (
@@ -168,32 +301,40 @@ export default function Reel({ data }: { data: FilmData }) {
                 <p className={`${styles.eyebrow} ${styles.eyebrowGold} ${styles.rv}`}>
                   The Composition
                 </p>
-                <div className={styles.tiers}>
+                <div className={styles.pyramid}>
                   {(
                     [
-                      ["Top", data.notes.top],
-                      ["Heart", data.notes.heart],
-                      ["Base", data.notes.base],
-                    ] as [string, string[]][]
-                  ).map(([label, notes], t) => (
+                      ["Top", "the first breath", data.notes.top],
+                      ["Heart", "the hour after", data.notes.heart],
+                      ["Base", "what remains", data.notes.base],
+                    ] as [string, string, string[]][]
+                  ).map(([label, whisper, notes], t) => (
                     <div
-                      className={`${styles.tier} ${styles.rv}`}
+                      className={`${styles.band} ${styles.rv}`}
                       key={label}
-                      style={{ "--d": `${0.1 + t * 0.12}s` } as CSSProperties}
+                      style={{ "--d": `${0.12 + t * 0.14}s` } as CSSProperties}
                     >
-                      <span className={styles.tierLabel}>
-                        {ROMAN[t]} · {label}
-                      </span>
-                      <div className={styles.tierNotes}>
-                        {notes.map((note) => (
-                          <span
-                            key={note}
-                            className={isSig(note) ? styles.noteSig : styles.note}
-                          >
-                            {note}
-                          </span>
-                        ))}
+                      <div className={styles.bandLabel}>
+                        <span className={styles.bandHead}>
+                          <span className={styles.bandRoman}>{ROMAN[t]}</span>
+                          <span className={styles.bandTier}>{label}</span>
+                        </span>
+                        <span className={styles.bandWhisper}>{whisper}</span>
                       </div>
+                      <p className={styles.bandNotes}>
+                        {notes.map((note, j) => (
+                          <Fragment key={note}>
+                            {j > 0 && (
+                              <span className={styles.bandSep} aria-hidden="true">
+                                ·
+                              </span>
+                            )}
+                            <span className={isSig(note) ? styles.noteSig : undefined}>
+                              {note}
+                            </span>
+                          </Fragment>
+                        ))}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -238,33 +379,44 @@ export default function Reel({ data }: { data: FilmData }) {
 
             {c.id === "light" && (
               <FullFrame img={data.items.day} bright>
-                <p className={`${styles.frameKicker} ${styles.rv}`}>In Light</p>
-                <p className={`${styles.frameLine} ${styles.rv}`}>
-                  The confession, stepped into daylight.
-                </p>
+                <p className={`${styles.frameKicker} ${styles.rv}`}>{data.film.lightKicker}</p>
+                <p className={`${styles.frameLine} ${styles.rv}`}>{data.film.lightLine}</p>
               </FullFrame>
             )}
 
             {c.id === "acquire" && (
-              <div className={styles.acquire}>
-                <p className={`${styles.eyebrow} ${styles.rv}`}>The Object</p>
-                <dl className={styles.spec}>
+              <div className={styles.colophon}>
+                <p className={`${styles.eyebrow} ${styles.eyebrowGold} ${styles.rv}`}>
+                  The Object
+                </p>
+                <dl
+                  className={styles.factGrid}
+                  data-cols={data.specs.length % 4 === 0 ? 4 : 3}
+                >
                   {data.specs.map(([kk, vv], s) => (
                     <div
-                      className={`${styles.specRow} ${styles.rv}`}
+                      className={`${styles.fact} ${styles.rv}`}
                       key={kk}
-                      style={{ "--d": `${0.1 + s * 0.06}s` } as CSSProperties}
+                      style={{ "--d": `${0.12 + s * 0.07}s` } as CSSProperties}
                     >
-                      <dt className={styles.specKey}>{kk}</dt>
-                      <dd className={styles.specVal}>{vv}</dd>
+                      <dt className={styles.factKey}>{kk}</dt>
+                      <dd className={styles.factVal}>{vv}</dd>
                     </div>
                   ))}
                 </dl>
-                {data.inspiredBy && (
-                  <p className={`${styles.aside} ${styles.rv}`}>
-                    In the spirit of {data.inspiredBy}
-                  </p>
-                )}
+                <div
+                  className={`${styles.colophonEnd} ${styles.rv}`}
+                  style={{ "--d": "0.75s" } as CSSProperties}
+                >
+                  <span className={styles.colophonRule} aria-hidden="true" />
+                  {data.inspiredBy ? (
+                    <p className={styles.aside}>In the spirit of {data.inspiredBy}</p>
+                  ) : (
+                    <p className={styles.aside}>
+                      {data.brand} · {data.year}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </section>
@@ -330,6 +482,92 @@ export default function Reel({ data }: { data: FilmData }) {
           </div>
         )}
       </div>
+
+      {/* ---------- gallery lightbox ---------- */}
+      {view !== null && data.items.gallery[view] && (
+        <div
+          className={styles.lightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label={data.items.gallery[view].caption ?? data.items.gallery[view].alt}
+          onClick={() => setView(null)}
+        >
+          <figure
+            className={styles.lbFigure}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className={styles.lbImg}
+              style={{ "--lb-ar": String(data.items.gallery[view].ar ?? 1.5) } as CSSProperties}
+            >
+              <Image
+                key={data.items.gallery[view].src}
+                src={data.items.gallery[view].src}
+                alt={data.items.gallery[view].alt}
+                fill
+                sizes="92vw"
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+            <figcaption className={styles.lbCap}>
+              <span className={styles.plateNo}>
+                {String(view + 1).padStart(2, "0")}
+              </span>
+              {data.items.gallery[view].caption ?? ""}
+              <span className={styles.lbAlt}>{data.items.gallery[view].alt}</span>
+            </figcaption>
+          </figure>
+
+          <button
+            type="button"
+            className={styles.lbClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              setView(null);
+            }}
+            aria-label="Close"
+            autoFocus
+          >
+            &times;
+          </button>
+
+          {galleryLen > 1 && (
+            <>
+              <button
+                type="button"
+                className={`${styles.lbNav} ${styles.lbPrev}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setView((v) => (v === null ? v : Math.max(0, v - 1)));
+                }}
+                disabled={view === 0}
+                aria-label="Previous plate"
+              >
+                &larr;
+              </button>
+              <button
+                type="button"
+                className={`${styles.lbNav} ${styles.lbNext}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setView((v) => (v === null ? v : Math.min(galleryLen - 1, v + 1)));
+                }}
+                disabled={view === galleryLen - 1}
+                aria-label="Next plate"
+              >
+                &rarr;
+              </button>
+              <div className={styles.lbCount} aria-hidden="true">
+                <span className={styles.counterNow}>
+                  {String(view + 1).padStart(2, "0")}
+                </span>
+                <span className={styles.counterSep}>/</span>
+                <span>{String(galleryLen).padStart(2, "0")}</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
