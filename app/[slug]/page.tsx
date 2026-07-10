@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFragrances, getFragranceBySlug } from "@/lib/content";
-import { CONCENTRATION_LABEL, TIER_LABEL, tierSymbol, asset, defaultSku, resolveImage } from "@/lib/catalog";
+import { CONCENTRATION_LABEL, TIER_LABEL, tierSymbol, asset, defaultSku, resolveImage, humanize } from "@/lib/catalog";
+import { themeToCssVars } from "@/lib/theme";
 import Reel, { type FilmData } from "@/components/film/Reel";
 
 export const dynamicParams = false;
@@ -51,8 +52,23 @@ export default async function FragrancePage({
   if (!bottle || !day) notFound();
 
   const conc = CONCENTRATION_LABEL[variant.concentration] ?? variant.concentration;
-  const family = `${f.family.replace("/", " / ")} Woody`;
+  const family = (f.subFamily ?? f.family).replace("/", " / ");
   const tier = `${tierSymbol(f.tier)} · ${TIER_LABEL[f.tier] ?? f.tier}`;
+  const wear = `${f.seasons.join(" / ")}${f.occasions[0] ? ` · ${humanize(f.occasions[0])}` : ""}`;
+
+  const specs: [string, string][] = [
+    ["Concentration", conc],
+    ["Volume", `${size.ml} ml`],
+  ];
+  if (f.perfumers.length) specs.push(["Nose", f.perfumers.join(", ")]);
+  specs.push(
+    ["Origin", f.origin ? `${f.origin}, ${f.releaseYear}` : String(f.releaseYear)],
+    ["Family", family],
+    ["Wear", wear]
+  );
+  if (f.stats?.longevity) specs.push(["Longevity", f.stats.longevity]);
+  if (f.stats?.sillage) specs.push(["Sillage", f.stats.sillage]);
+  specs.push(["Price", tier]);
 
   const data: FilmData = {
     brand: f.brand,
@@ -67,20 +83,33 @@ export default async function FragrancePage({
     signature: f.signatureNotes,
     accords: f.accords,
     inspiredBy: f.inspiredBy[0] ?? "",
-    specs: [
-      ["Concentration", conc],
-      ["Volume", `${size.ml} ml`],
-      ["Origin", `${f.origin}, ${f.releaseYear}`],
-      ["Family", family],
-      ["Wear", "Fall / Winter · Evening"],
-      ["Price", tier],
-    ],
+    film: {
+      chapterOne: f.film?.chapterOne ?? "Overture",
+      darkLabel: f.film?.darkLabel ?? "In the Dark",
+      lightLabel: f.film?.lightLabel ?? "In Light",
+      darkKicker: f.film?.darkKicker ?? family,
+      darkLine: f.film?.darkLine ?? "Held close, after dark.",
+      lightKicker: f.film?.lightKicker ?? "In Light",
+      lightLine: f.film?.lightLine ?? "The same signature, stepped into daylight.",
+      galleryLabel: f.film?.galleryLabel ?? "The Campaign",
+      galleryKicker: f.film?.galleryKicker ?? "As the House Shows It",
+    },
+    specs,
     items: {
-      bottle: { src: asset(bottle.src), alt: bottle.alt },
+      bottle: { src: asset(bottle.src), alt: bottle.alt, ar: bottle.ar, fit: bottle.fit },
       atmos: atmos ? { src: asset(atmos.src), alt: atmos.alt, pos: atmos.posDesktop ?? "50% 45%" } : null,
       day: { src: asset(day.src), alt: day.alt, pos: day.posDesktop ?? "50% 42%" },
+      gallery: f.images
+        .filter((i) => i.role === "editorial")
+        .map((i) => ({
+          src: asset(i.src),
+          alt: i.alt,
+          pos: i.posDesktop ?? "50% 50%",
+          ar: i.ar,
+          caption: i.caption,
+        })),
     },
   };
 
-  return <Reel data={data} />;
+  return <Reel data={data} themeStyle={themeToCssVars(f.theme)} />;
 }

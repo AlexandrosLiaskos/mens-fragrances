@@ -21,6 +21,9 @@
   --gold-bright: #DCB65C;
   --gold-deep: #8A6D2E;
 
+  --silver: #B6BEC9;
+  --silver-bright: #D9DEE6;
+
   --hair-faint: rgba(244, 241, 234, 0.07);
   --hair: rgba(244, 241, 234, 0.13);
   --hair-strong: rgba(244, 241, 234, 0.22);
@@ -232,9 +235,5 @@ h1, h2, h3 { margin: 0; font-weight: 400; }
   .crow { grid-template-columns: 44px 1fr; }
 }
 
-/* ---------- reduced motion ---------- */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .cue__rail::after { animation: none; }
-  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
-}
+/* Reduced-motion suppression intentionally removed: animations play
+   identically on every machine (owner's call, 2026-07-10). */

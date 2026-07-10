@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./catalogue.module.css";
@@ -26,7 +33,13 @@ export type Item = {
 
 const uniq = (a: string[]) => Array.from(new Set(a)).sort();
 
-export default function Catalogue({ items }: { items: Item[] }) {
+export default function Catalogue({
+  items,
+  signature,
+}: {
+  items: Item[];
+  signature: string;
+}) {
   const families = useMemo(() => uniq(items.map((i) => i.subFamily)), [items]);
   const notes = useMemo(() => uniq(items.flatMap((i) => i.notes)), [items]);
   const seasons = useMemo(() => uniq(items.flatMap((i) => i.seasons)), [items]);
@@ -43,6 +56,76 @@ export default function Catalogue({ items }: { items: Item[] }) {
     }
     return Array.from(seen.values()).sort((a, b) => a.rank - b.rank);
   }, [items]);
+
+  /* ---------- the opening title card ----------
+     First visit of the session: the wordmark holds centre-stage on black,
+     then flies (FLIP) onto its masthead seat; only once it lands does the
+     rest of the page cascade in. Every page animation is born paused
+     (data-intro="pending") so nothing fires behind the curtain. */
+  type IntroState = "pending" | "hold" | "fly" | "play-intro" | "play";
+  const [intro, setIntro] = useState<IntroState>("pending");
+  const ovTitleRef = useRef<HTMLSpanElement>(null);
+  const wordmarkRef = useRef<HTMLSpanElement>(null);
+  const [flyStyle, setFlyStyle] = useState<CSSProperties | undefined>();
+
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("mf-intro-seen") === "1";
+    } catch {}
+    if (seen) {
+      setIntro("play");
+      return;
+    }
+    setIntro("hold");
+    /* debug: /?introhold=12000 freezes the title card for inspection */
+    let holdMs = 1500;
+    try {
+      const v = Number(new URLSearchParams(window.location.search).get("introhold"));
+      if (v > 0) holdMs = v;
+    } catch {}
+    let done = false;
+    let fallback = 0;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      try {
+        sessionStorage.setItem("mf-intro-seen", "1");
+      } catch {}
+      setIntro("play-intro");
+    };
+    const t = window.setTimeout(async () => {
+      try {
+        await document.fonts?.ready;
+      } catch {}
+      const from = ovTitleRef.current?.getBoundingClientRect();
+      const to = wordmarkRef.current?.getBoundingClientRect();
+      if (from && to && from.width > 0) {
+        setFlyStyle({
+          transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${
+            to.width / from.width
+          })`,
+        });
+        ovTitleRef.current?.addEventListener("transitionend", finish, { once: true });
+        setIntro("fly");
+        fallback = window.setTimeout(finish, 1100); // in case transitionend is missed
+      } else {
+        finish();
+      }
+    }, holdMs);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(fallback);
+    };
+  }, []);
+
+  /* the opening wave plays once; afterwards filtering ripples in quickly */
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (intro !== "play" && intro !== "play-intro") return;
+    const t = window.setTimeout(() => setSettled(true), 2400);
+    return () => window.clearTimeout(t);
+  }, [intro]);
 
   const [q, setQ] = useState("");
   const [fam, setFam] = useState<Set<string>>(new Set());
@@ -94,15 +177,24 @@ export default function Catalogue({ items }: { items: Item[] }) {
   );
 
   return (
-    <main className={styles.page}>
+    <>
+    <main
+      className={styles.page}
+      data-intro={intro === "play" ? "play" : intro === "play-intro" ? "play-intro" : "pending"}
+    >
       <div className={styles.vign} aria-hidden="true" />
 
       <header className={styles.mast}>
-        <span className={styles.wordmark}>Men&rsquo;s Fragrances</span>
-        <span className={styles.tag}>
-          The Cabinet · {String(items.length).padStart(2, "0")}{" "}
-          {items.length === 1 ? "Fragrance" : "Fragrances"}
+        <span ref={wordmarkRef} className={styles.wordmark}>
+          Men&rsquo;s Fragrances
         </span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- tiny static
+            asset outside the fragrance image ladder */}
+        <img
+          src={signature}
+          alt="Alexandros Liaskos"
+          className={styles.signature}
+        />
         <button
           className={`${styles.toggle} ${open ? styles.toggleOpen : ""}`}
           onClick={() => setOpen((o) => !o)}
@@ -210,11 +302,22 @@ export default function Catalogue({ items }: { items: Item[] }) {
           {filtered.length === 0 ? (
             <p className={styles.empty}>Nothing matches those filters.</p>
           ) : (
-            <div className={styles.grid}>
-              {filtered.map((it) => (
-                <Link key={it.id} href={it.href} className={styles.card}>
+            <div className={styles.grid} data-settled={settled || undefined}>
+              {filtered.map((it, idx) => (
+                <Link
+                  key={it.id}
+                  href={it.href}
+                  className={styles.card}
+                  style={{ "--i": idx } as CSSProperties}
+                >
                   <div className={styles.cardImg}>
-                    <Image src={it.image.src} alt={it.image.alt} fill sizes="(max-width: 860px) 45vw, 200px" />
+                    <Image
+                      src={it.image.src}
+                      alt={it.image.alt}
+                      fill
+                      sizes="(max-width: 860px) 45vw, 200px"
+                      priority={idx < 4}
+                    />
                   </div>
                   <span className={styles.cardEyebrow}>{it.brand}</span>
                   <span className={styles.cardName}>{it.title}</span>
@@ -240,6 +343,25 @@ export default function Catalogue({ items }: { items: Item[] }) {
         </section>
       </div>
     </main>
+
+    {(intro === "pending" || intro === "hold" || intro === "fly") && (
+      <div
+        className={`${styles.intro} ${intro === "fly" ? styles.introFly : ""}`}
+        aria-hidden="true"
+      >
+        <div className={styles.introCenter}>
+          <span
+            ref={ovTitleRef}
+            className={styles.introTitle}
+            style={intro === "fly" ? flyStyle : undefined}
+          >
+            Men&rsquo;s Fragrances
+          </span>
+          <span className={styles.introRule} />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -256,7 +378,7 @@ function Group({
   scroll?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <div className={styles.group}>
       <button className={styles.groupHead} onClick={() => setOpen((o) => !o)} aria-expanded={open}>

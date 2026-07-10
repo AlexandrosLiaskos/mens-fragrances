@@ -39,6 +39,14 @@ const hisConfession: FragranceInput = {
 
   epigraph: "Tonka, you are my passion.",
   descriptor: "Amber Oriental · Eau de Parfum",
+  film: {
+    chapterOne: "Confession",
+    darkKicker: "Amber / Oriental Woody",
+    darkLine: "Warmth, confessed in the dark.",
+    lightLine: "The confession, stepped into daylight.",
+    galleryLabel: "Up Close",
+    galleryKicker: "The Object, Up Close",
+  },
 
   images: [
     { src: "/fragrances/his-confession/item.jpg", role: "item", ar: 0.286,
@@ -58,6 +66,17 @@ const hisConfession: FragranceInput = {
     { src: "/fragrances/his-confession/daylight.jpg", role: "daylight", ar: 0.686,
       alt: "The black bust bottle on white drapery among dried rose petals and thorn branches",
       posDesktop: "50% 42%", posMobile: "50% 42%" },
+
+    /* the gallery chapter — the owner's close photography, plate by plate */
+    { src: "/fragrances/his-confession/in-hand.jpg", role: "editorial", ar: 0.630,
+      caption: "In hand, at the desk",
+      alt: "The bottle held in hand over a wooden desk, the gold collar catching the lamplight" },
+    { src: "/fragrances/his-confession/packaging.jpg", role: "editorial", ar: 0.455,
+      caption: "The wave-embossed case", posDesktop: "50% 30%",
+      alt: "The wave-embossed outer box, gold foil reading His Confession, Eau de Parfum, 100 ml" },
+    { src: "/fragrances/his-confession/unboxing_2.jpg", role: "editorial", ar: 0.454,
+      caption: "By lamplight", posDesktop: "50% 40%",
+      alt: "The bottle on a dark table by lamplight, a green plant and leather sofa behind" },
   ],
 
   inspiredBy: ["Dior Homme Intense"],
@@ -65,6 +84,8 @@ const hisConfession: FragranceInput = {
   theme: {
     accent: "#C9A24B",
     accentGlow: "rgba(201, 162, 75, 0.32)",
+    accentBright: "#DCB65C",
+    accentDeep: "#8A6D2E",
     navy: "#16263F",
     metal: "gold",
   },

@@ -12,7 +12,66 @@
   font-family: var(--font-sans), system-ui, sans-serif;
   overflow-x: hidden;
   isolation: isolate;
+  /* arriving from a film chapter: the cabinet fades up from black
+     (opacity only — a transform here would re-root the fixed drawer) */
+  animation: pageIn 0.9s var(--ease) both;
 }
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes fadeSoft { from { opacity: 0; } to { opacity: 1; } }
+
+/* the frame arrives before the bottles: masthead, then rail, then title.
+   The mast only animates on the non-intro path — while the title card is
+   measuring its landing seat, the mast must sit at its natural position
+   (a paused riseIn would offset the measurement by its 16px from-state). */
+.page[data-intro="play"] .mast { animation: riseIn 0.9s var(--ease) 0.08s backwards; }
+.filters { animation: fadeSoft 1.1s ease 0.2s backwards; } /* opacity only — the mobile drawer's transform must stay untouched */
+.collTitle { animation: riseIn 0.9s var(--ease) 0.16s backwards; }
+
+/* ============================================================
+   OPENING TITLE CARD — the wordmark holds the stage, then takes
+   its seat in the masthead; the page cascades only after it lands
+   ============================================================ */
+.intro {
+  position: fixed; inset: 0; z-index: 120;
+  background: #030304; /* identical to .page — the swap is invisible */
+  display: flex; align-items: center; justify-content: center;
+}
+.introCenter { display: flex; flex-direction: column; align-items: center; gap: clamp(1rem, 2.6vh, 1.6rem); }
+.introTitle {
+  /* metrics must mirror .wordmark exactly, so the landing scale is pure */
+  font-family: var(--font-serif), serif;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  color: var(--silver);
+  font-size: clamp(1.55rem, 6.5vw, 5rem);
+  line-height: 1;
+  transform-origin: top left;
+  will-change: transform;
+  animation: introIn 1s var(--ease) 0.3s backwards;
+  /* the flight to the masthead: the film's own hard-cut easing */
+  transition: transform 0.92s cubic-bezier(0.76, 0, 0.24, 1);
+}
+@keyframes introIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.introRule {
+  height: 1px; width: min(240px, 40vw);
+  background: var(--metal-gold-h);
+  transform-origin: center;
+  animation: ruleIn 1.1s var(--ease) 0.75s backwards;
+  transition: opacity 0.3s ease;
+}
+@keyframes ruleIn { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+.introFly .introRule { opacity: 0; }
+
+/* everything holds its breath until the title has landed */
+.page[data-intro="pending"],
+.page[data-intro="pending"] * { animation-play-state: paused !important; }
+/* intro path: page + masthead appear instantly beneath the landed title;
+   only the signature makes its own entrance beside it */
+.page[data-intro="play-intro"] { animation: none; }
+.page[data-intro="play-intro"] .mast { animation: none; }
+.page[data-intro="play-intro"] .signature { animation: fadeSoft 1s var(--ease) 0.25s backwards; }
 .vign {
   position: fixed;
   inset: 0;
@@ -36,15 +95,14 @@
   font-size: clamp(1.05rem, 1.9vw, 1.45rem);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-0);
+  color: var(--silver);
 }
-.tag {
-  font-family: var(--font-sans), sans-serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  text-align: right;
+/* the owner's signature, inked in the page gold */
+.signature {
+  height: clamp(2.4rem, 4.2vw, 3.4rem);
+  width: auto;
+  align-self: center;
+  opacity: 0.92;
 }
 
 /* ---------- body: filters | collection ---------- */
@@ -84,11 +142,11 @@
   font-size: 0.82rem;
   letter-spacing: 0.06em;
   outline: none;
-  caret-color: var(--gold);
+  caret-color: var(--silver-bright);
   transition: border-color 0.4s var(--ease);
 }
-.search::placeholder { color: var(--ink-3); letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.66rem; }
-.search:focus { border-color: var(--gold); }
+.search::placeholder { color: var(--silver); letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.66rem; }
+.search:focus { border-color: var(--silver); }
 
 .group { display: flex; flex-direction: column; }
 .groupHead {
@@ -182,7 +240,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--silver);
   margin: 0 0 clamp(1.8rem, 4.5vh, 3rem);
 }
 .grid {
@@ -193,7 +251,35 @@
 }
 .empty { font-family: var(--font-serif), serif; font-style: italic; color: var(--ink-2); font-size: 1.1rem; }
 
-.card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.35rem; text-decoration: none; color: inherit; }
+.card {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 0.35rem; text-decoration: none; color: inherit;
+  /* the cabinet fills bottle by bottle — the film's own slow settle,
+     rolling across the shelves. `backwards` (not both) so the finished
+     animation releases the properties back to the hover transitions. */
+  animation: riseIn 1.05s var(--ease) backwards;
+  animation-delay: calc(0.3s + min(calc(var(--i, 0) * 110ms), 990ms));
+}
+/* each bottle breathes into focus like a reel image: half-light and a
+   touch too close, settling as it arrives */
+.cardImg img {
+  animation: focusIn 1.3s var(--ease) backwards;
+  animation-delay: calc(0.34s + min(calc(var(--i, 0) * 110ms), 1030ms));
+}
+@keyframes focusIn {
+  from { opacity: 0.35; transform: scale(1.06); }
+  to { opacity: 1; transform: none; }
+}
+/* after the opening wave has played, entering cards (filtering) ripple
+   in quickly instead of re-staging the whole overture */
+.grid[data-settled] .card {
+  animation-duration: 0.55s;
+  animation-delay: min(calc(var(--i, 0) * 40ms), 320ms);
+}
+.grid[data-settled] .cardImg img {
+  animation-duration: 0.7s;
+  animation-delay: min(calc(var(--i, 0) * 40ms), 320ms);
+}
 .cardImg { position: relative; width: 100%; height: clamp(180px, 24vh, 280px); }
 .cardImg img { object-fit: contain; object-position: center; transition: transform 0.7s var(--ease); }
 .card:hover .cardImg img, .card:focus-visible .cardImg img { transform: scale(1.05); }
@@ -288,11 +374,5 @@
 }
 @media (max-width: 420px) { .grid { gap: 1.8rem 1.2rem; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .filters { transition: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .groupBody { transition: none; }
-  .cardImg img { transition: none; }
-}
+/* Reduced-motion suppression intentionally removed: animations play
+   identically on every machine (owner's call, 2026-07-10). */
