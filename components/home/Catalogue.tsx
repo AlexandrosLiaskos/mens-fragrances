@@ -3,7 +3,6 @@
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -58,20 +57,25 @@ export default function Catalogue({
   }, [items]);
 
   /* ---------- the opening title card ----------
-     First visit of the session: the wordmark holds centre-stage on black,
-     then flies (FLIP) onto its masthead seat; only once it lands does the
-     rest of the page cascade in. Every page animation is born paused
-     (data-intro="pending") so nothing fires behind the curtain. */
-  type IntroState = "pending" | "hold" | "fly" | "play-intro" | "play";
+     First visit of the session: a cinematic card holds centre-stage on
+     black — "MEN'S" as a small gold kicker, then FRAGRANCES monumental,
+     each letter blooming into focus from the centre outwards (the reel's
+     own focus-pull). After a beat of stillness the letters drift up and
+     dissolve while the page cascades in beneath the thinning veil, so
+     the exit carries straight into the page. Every page animation is
+     born paused (data-intro="pending") so nothing fires behind the
+     curtain; the cascade is released the moment the veil starts to lift
+     (state "leave"), not after it is gone. */
+  type IntroState = "pending" | "hold" | "leave" | "play-intro" | "play";
   const [intro, setIntro] = useState<IntroState>("pending");
-  const ovTitleRef = useRef<HTMLSpanElement>(null);
-  const wordmarkRef = useRef<HTMLSpanElement>(null);
-  const [flyStyle, setFlyStyle] = useState<CSSProperties | undefined>();
 
   useEffect(() => {
     let seen = false;
+    let params: URLSearchParams | undefined;
     try {
-      seen = sessionStorage.getItem("mf-intro-seen") === "1";
+      params = new URLSearchParams(window.location.search);
+      /* /?intro replays the card even within a session */
+      seen = sessionStorage.getItem("mf-intro-seen") === "1" && !params.has("intro");
     } catch {}
     if (seen) {
       setIntro("play");
@@ -79,50 +83,29 @@ export default function Catalogue({
     }
     setIntro("hold");
     /* debug: /?introhold=12000 freezes the title card for inspection */
-    let holdMs = 1500;
-    try {
-      const v = Number(new URLSearchParams(window.location.search).get("introhold"));
-      if (v > 0) holdMs = v;
-    } catch {}
-    let done = false;
-    let fallback = 0;
-    const finish = () => {
-      if (done) return;
-      done = true;
+    let holdMs = 3400;
+    const v = Number(params?.get("introhold"));
+    if (v > 0) holdMs = v;
+    const t = window.setTimeout(() => {
       try {
         sessionStorage.setItem("mf-intro-seen", "1");
       } catch {}
-      setIntro("play-intro");
-    };
-    const t = window.setTimeout(async () => {
-      try {
-        await document.fonts?.ready;
-      } catch {}
-      const from = ovTitleRef.current?.getBoundingClientRect();
-      const to = wordmarkRef.current?.getBoundingClientRect();
-      if (from && to && from.width > 0) {
-        setFlyStyle({
-          transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${
-            to.width / from.width
-          })`,
-        });
-        ovTitleRef.current?.addEventListener("transitionend", finish, { once: true });
-        setIntro("fly");
-        fallback = window.setTimeout(finish, 1100); // in case transitionend is missed
-      } else {
-        finish();
-      }
+      setIntro("leave");
     }, holdMs);
-    return () => {
-      window.clearTimeout(t);
-      window.clearTimeout(fallback);
-    };
+    return () => window.clearTimeout(t);
   }, []);
+
+  /* the veil needs ~1.6s to dissolve; then the overlay can unmount */
+  useEffect(() => {
+    if (intro !== "leave") return;
+    const t = window.setTimeout(() => setIntro("play-intro"), 1600);
+    return () => window.clearTimeout(t);
+  }, [intro]);
 
   /* the opening wave plays once; afterwards filtering ripples in quickly */
   const [settled, setSettled] = useState(false);
   useEffect(() => {
-    if (intro !== "play" && intro !== "play-intro") return;
+    if (intro === "pending" || intro === "hold") return;
     const t = window.setTimeout(() => setSettled(true), 2400);
     return () => window.clearTimeout(t);
   }, [intro]);
@@ -180,12 +163,18 @@ export default function Catalogue({
     <>
     <main
       className={styles.page}
-      data-intro={intro === "play" ? "play" : intro === "play-intro" ? "play-intro" : "pending"}
+      data-intro={
+        intro === "play"
+          ? "play"
+          : intro === "leave" || intro === "play-intro"
+            ? "play-intro"
+            : "pending"
+      }
     >
       <div className={styles.vign} aria-hidden="true" />
 
       <header className={styles.mast}>
-        <span ref={wordmarkRef} className={styles.wordmark}>
+        <span className={styles.wordmark}>
           Men&rsquo;s Fragrances
         </span>
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static
@@ -344,18 +333,24 @@ export default function Catalogue({
       </div>
     </main>
 
-    {(intro === "pending" || intro === "hold" || intro === "fly") && (
+    {(intro === "pending" || intro === "hold" || intro === "leave") && (
       <div
-        className={`${styles.intro} ${intro === "fly" ? styles.introFly : ""}`}
+        className={`${styles.intro} ${intro === "leave" ? styles.introLeave : ""}`}
         aria-hidden="true"
       >
         <div className={styles.introCenter}>
-          <span
-            ref={ovTitleRef}
-            className={styles.introTitle}
-            style={intro === "fly" ? flyStyle : undefined}
-          >
-            Men&rsquo;s Fragrances
+          <span className={styles.introEyebrow}>Men&rsquo;s</span>
+          <span className={styles.introWord}>
+            {Array.from("Fragrances").map((ch, i, arr) => (
+              <span
+                key={i}
+                className={styles.introChar}
+                /* --d: distance from the word's centre — the bloom radiates outwards */
+                style={{ "--d": Math.abs(i - (arr.length - 1) / 2) } as CSSProperties}
+              >
+                {ch}
+              </span>
+            ))}
           </span>
           <span className={styles.introRule} />
         </div>
